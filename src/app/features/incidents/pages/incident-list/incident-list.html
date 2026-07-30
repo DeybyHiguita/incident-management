@@ -1,0 +1,43 @@
+<section class="incident-list">
+  <header class="incident-list__header">
+    <h2>Incidencias registradas</h2>
+    <button type="button" class="incident-list__toggle" (click)="toggleIncidents()">
+      {{ incidents().length > 0 ? 'Vaciar lista (ver estado vacío)' : 'Restaurar lista' }}
+    </button>
+  </header>
+
+  @for (incident of incidents(); track incident.id) {
+    <article class="incident-card">
+      <div class="incident-card__title-row">
+        <h3 class="incident-card__title">{{ incident.title }}</h3>
+
+        @switch (incident.priority) {
+          @case ('LOW') { <span class="badge badge--priority-low">Baja</span> }
+          @case ('MEDIUM') { <span class="badge badge--priority-medium">Media</span> }
+          @case ('HIGH') { <span class="badge badge--priority-high">Alta</span> }
+          @case ('CRITICAL') { <span class="badge badge--priority-critical">Crítica</span> }
+        }
+      </div>
+
+      <p class="incident-card__description">{{ incident.description }}</p>
+
+      <div class="incident-card__meta">
+        @switch (incident.status) {
+          @case ('OPEN') { <span class="badge badge--status-open">Abierta</span> }
+          @case ('IN_PROGRESS') { <span class="badge badge--status-in-progress">En progreso</span> }
+          @case ('RESOLVED') { <span class="badge badge--status-resolved">Resuelta</span> }
+          @case ('CLOSED') { <span class="badge badge--status-closed">Cerrada</span> }
+          @default { <span class="badge">Desconocido</span> }
+        }
+
+        @if (incident.assignedAgentId) {
+          <span class="incident-card__agent">Agente asignado: {{ incident.assignedAgentId }}</span>
+        } @else {
+          <span class="incident-card__agent incident-card__agent--unassigned">Sin agente asignado</span>
+        }
+      </div>
+    </article>
+  } @empty {
+    <p class="incident-list__empty">No hay incidencias registradas.</p>
+  }
+</section>
