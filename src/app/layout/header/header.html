@@ -1,0 +1,19 @@
+<header class="app-header">
+  <h1 class="app-header__title">{{ systemTitle }}</h1>
+
+  <div class="app-header__user">
+    <span class="app-header__user-name">{{ userName }}</span>
+    <button
+      type="button"
+      class="app-header__toggle"
+      [attr.aria-pressed]="showUserDetails()"
+      (click)="toggleUserDetails()"
+    >
+      {{ showUserDetails() ? 'Ocultar detalles' : 'Mostrar detalles' }}
+    </button>
+  </div>
+
+  @if (showUserDetails()) {
+    <p class="app-header__details">Sesión simulada de: {{ userName }}</p>
+  }
+</header>

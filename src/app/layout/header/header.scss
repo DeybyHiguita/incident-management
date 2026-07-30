@@ -1,0 +1,37 @@
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background-color: #1f2937;
+  color: #ffffff;
+
+  &__title {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__toggle {
+    cursor: pointer;
+    border: 1px solid #ffffff;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: inherit;
+    padding: 0.35rem 0.75rem;
+  }
+
+  &__details {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #d1d5db;
+  }
+}
