@@ -1,0 +1,49 @@
+<article class="incident-card" [class.incident-card--selected]="selected()">
+  <div class="incident-card__title-row">
+    <h3 class="incident-card__title">{{ incident().title }}</h3>
+
+    @switch (incident().priority) {
+      @case ('LOW') { <span class="badge badge--priority-low">Baja</span> }
+      @case ('MEDIUM') { <span class="badge badge--priority-medium">Media</span> }
+      @case ('HIGH') { <span class="badge badge--priority-high">Alta</span> }
+      @case ('CRITICAL') { <span class="badge badge--priority-critical">Crítica</span> }
+    }
+  </div>
+
+  <p class="incident-card__description">{{ incident().description }}</p>
+
+  <div class="incident-card__meta">
+    @switch (incident().status) {
+      @case ('OPEN') { <span class="badge badge--status-open">Abierta</span> }
+      @case ('IN_PROGRESS') { <span class="badge badge--status-in-progress">En progreso</span> }
+      @case ('RESOLVED') { <span class="badge badge--status-resolved">Resuelta</span> }
+      @case ('CLOSED') { <span class="badge badge--status-closed">Cerrada</span> }
+      @default { <span class="badge">Desconocido</span> }
+    }
+
+    @if (incident().assignedAgentId) {
+      <span class="incident-card__agent">Agente asignado: {{ incident().assignedAgentId }}</span>
+    } @else {
+      <span class="incident-card__agent incident-card__agent--unassigned">Sin agente asignado</span>
+    }
+  </div>
+
+  <div class="incident-card__actions">
+    <button
+      type="button"
+      class="incident-card__action"
+      [attr.aria-pressed]="selected()"
+      (click)="onSelect()"
+    >
+      {{ selected() ? 'Seleccionada' : 'Seleccionar' }}
+    </button>
+
+    <button
+      type="button"
+      class="incident-card__action incident-card__action--danger"
+      (click)="onDelete()"
+    >
+      Eliminar
+    </button>
+  </div>
+</article>
