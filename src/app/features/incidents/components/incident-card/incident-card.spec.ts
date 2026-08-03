@@ -48,23 +48,69 @@ describe('IncidentCard', () => {
     let emitted: Incident | undefined;
     component.deleteRequested.subscribe((incident) => (emitted = incident));
 
-    clickButton('Eliminar');
+    clickButton('Eliminar incidencia');
 
     expect(emitted).toBe(INCIDENT);
     expect(component.incident()).toEqual(INCIDENT);
   });
 
-  function clickButton(label: string): void {
-    const buttons: HTMLButtonElement[] = Array.from(
+  it('todos los botones tienen un nombre accesible', () => {
+    const buttons = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('button'),
     );
-    const button = buttons.find((candidate) => candidate.textContent?.trim() === label);
+
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(accessibleName(button))
+        .withContext(`El botón "${button.className}" no tiene nombre accesible`)
+        .toBeTruthy();
+    }
+  });
+
+  it('el botón que solo tiene icono se identifica con aria-label y oculta el svg', () => {
+    const iconButton: HTMLButtonElement = fixture.nativeElement.querySelector('.btn--icon');
+
+    expect(iconButton.textContent?.trim()).toBe('');
+    expect(iconButton.getAttribute('aria-label')).toBe(`Eliminar incidencia: ${INCIDENT.title}`);
+    expect(iconButton.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('refleja el estado de selección con aria-pressed', () => {
+    const selectButton = findButton('Seleccionar');
+    expect(selectButton.getAttribute('aria-pressed')).toBe('false');
+
+    fixture.componentRef.setInput('selected', true);
+    fixture.detectChanges();
+
+    expect(findButton('Seleccionada').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('expone la fecha de creación en un elemento <time> legible por máquinas', () => {
+    const time: HTMLTimeElement = fixture.nativeElement.querySelector('time');
+
+    expect(time.getAttribute('datetime')).toBe(INCIDENT.createdAt);
+    expect(time.textContent).toContain('27/07/2026');
+  });
+
+  function accessibleName(element: HTMLElement): string {
+    return element.getAttribute('aria-label') ?? element.textContent?.trim() ?? '';
+  }
+
+  function findButton(label: string): HTMLButtonElement {
+    const buttons = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    );
+    const button = buttons.find((candidate) => accessibleName(candidate).startsWith(label));
 
     if (!button) {
       throw new Error(`No se encontró el botón "${label}"`);
     }
 
-    button.click();
+    return button;
+  }
+
+  function clickButton(label: string): void {
+    findButton(label).click();
     fixture.detectChanges();
   }
 });

@@ -1,0 +1,22 @@
+// Puntos de corte del diseño adaptable.
+// Viven en SCSS (y no como custom properties) porque `@media` no puede
+// evaluar `var(--...)`: la media query se resuelve antes que las variables CSS.
+$breakpoints: (
+  sm: 40rem, // 640px — teléfono grande / tablet vertical
+  md: 60rem, // 960px — tablet horizontal / escritorio
+);
+
+/// Aplica estilos desde el punto de corte indicado hacia arriba (mobile-first).
+/// @example scss
+///   @include respond-from(sm) { padding: var(--space-6); }
+@mixin respond-from($name) {
+  $size: map-get($breakpoints, $name);
+
+  @if $size == null {
+    @error "Punto de corte desconocido: #{$name}. Disponibles: #{map-keys($breakpoints)}.";
+  }
+
+  @media (min-width: $size) {
+    @content;
+  }
+}

@@ -1,24 +1,58 @@
 <article class="incident-card" [class.incident-card--selected]="selected()">
-  <div class="incident-card__title-row">
+  <header class="incident-card__header">
     <h3 class="incident-card__title">{{ incident().title }}</h3>
 
     @switch (incident().priority) {
-      @case ('LOW') { <span class="badge badge--priority-low">Baja</span> }
-      @case ('MEDIUM') { <span class="badge badge--priority-medium">Media</span> }
-      @case ('HIGH') { <span class="badge badge--priority-high">Alta</span> }
-      @case ('CRITICAL') { <span class="badge badge--priority-critical">Crítica</span> }
+      @case ('LOW') {
+        <span class="badge badge--priority-low"
+          ><span class="visually-hidden">Prioridad: </span>Baja</span
+        >
+      }
+      @case ('MEDIUM') {
+        <span class="badge badge--priority-medium"
+          ><span class="visually-hidden">Prioridad: </span>Media</span
+        >
+      }
+      @case ('HIGH') {
+        <span class="badge badge--priority-high"
+          ><span class="visually-hidden">Prioridad: </span>Alta</span
+        >
+      }
+      @case ('CRITICAL') {
+        <span class="badge badge--priority-critical"
+          ><span class="visually-hidden">Prioridad: </span>Crítica</span
+        >
+      }
     }
-  </div>
+  </header>
 
   <p class="incident-card__description">{{ incident().description }}</p>
 
   <div class="incident-card__meta">
     @switch (incident().status) {
-      @case ('OPEN') { <span class="badge badge--status-open">Abierta</span> }
-      @case ('IN_PROGRESS') { <span class="badge badge--status-in-progress">En progreso</span> }
-      @case ('RESOLVED') { <span class="badge badge--status-resolved">Resuelta</span> }
-      @case ('CLOSED') { <span class="badge badge--status-closed">Cerrada</span> }
-      @default { <span class="badge">Desconocido</span> }
+      @case ('OPEN') {
+        <span class="badge badge--status-open"
+          ><span class="visually-hidden">Estado: </span>Abierta</span
+        >
+      }
+      @case ('IN_PROGRESS') {
+        <span class="badge badge--status-in-progress"
+          ><span class="visually-hidden">Estado: </span>En progreso</span
+        >
+      }
+      @case ('RESOLVED') {
+        <span class="badge badge--status-resolved"
+          ><span class="visually-hidden">Estado: </span>Resuelta</span
+        >
+      }
+      @case ('CLOSED') {
+        <span class="badge badge--status-closed"
+          ><span class="visually-hidden">Estado: </span>Cerrada</span
+        >
+      }
+      @default {
+        <span class="badge"><span class="visually-hidden">Estado: </span>Desconocido</span>
+      }
     }
 
     @if (incident().assignedAgentId) {
@@ -26,24 +60,46 @@
     } @else {
       <span class="incident-card__agent incident-card__agent--unassigned">Sin agente asignado</span>
     }
+
+    <time class="incident-card__date" [attr.datetime]="incident().createdAt">
+      Creada el {{ incident().createdAt | date: 'dd/MM/yyyy' }}
+    </time>
   </div>
 
-  <div class="incident-card__actions">
+  <footer class="incident-card__actions">
     <button
       type="button"
-      class="incident-card__action"
+      class="btn incident-card__select"
       [attr.aria-pressed]="selected()"
       (click)="onSelect()"
     >
-      {{ selected() ? 'Seleccionada' : 'Seleccionar' }}
+      <!-- Sin espacio antes del <span>: forma parte del nombre accesible. -->
+      {{ selected() ? 'Seleccionada' : 'Seleccionar' }}<span class="visually-hidden"
+        >: {{ incident().title }}</span
+      >
     </button>
 
+    <!-- Botón solo con icono: el nombre accesible lo aporta aria-label,
+         y el SVG se oculta a las tecnologías de asistencia. -->
     <button
       type="button"
-      class="incident-card__action incident-card__action--danger"
+      class="btn btn--danger btn--icon"
+      [attr.aria-label]="'Eliminar incidencia: ' + incident().title"
       (click)="onDelete()"
     >
-      Eliminar
+      <svg
+        class="incident-card__icon"
+        viewBox="0 0 24 24"
+        width="16"
+        height="16"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          fill="currentColor"
+          d="M9 3h6a1 1 0 0 1 1 1v1h4v2h-1.06l-1.02 12.24A2 2 0 0 1 15.93 21H8.07a2 2 0 0 1-1.99-1.76L5.06 7H4V5h4V4a1 1 0 0 1 1-1Zm1 2v0h4V5h-4Zm-2.93 2 1 12h7.86l1-12H7.07ZM10 9h2v8h-2V9Zm4 0h-2v8h2V9Z"
+        />
+      </svg>
     </button>
-  </div>
+  </footer>
 </article>

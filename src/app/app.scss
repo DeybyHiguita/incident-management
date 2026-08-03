@@ -1,3 +1,5 @@
+@use 'breakpoints' as bp;
+
 :host {
   display: flex;
   flex-direction: column;
@@ -6,5 +8,20 @@
 
 .app-main {
   flex: 1;
-  padding: 1.5rem;
+  padding: var(--space-4);
+
+  /* El <main> recibe foco por programa desde el skip link, pero no debe
+     dibujar el anillo de foco como si fuera un control interactivo. */
+  &:focus {
+    outline: none;
+  }
+
+  @include bp.respond-from(sm) {
+    padding: var(--space-5);
+  }
+
+  &__container {
+    max-width: var(--layout-max-width);
+    margin-inline: auto;
+  }
 }

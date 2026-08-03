@@ -1,1 +1,222 @@
-/* You can add global styles to this file, and also import other style files */
+/* =========================================================================
+   Sistema de diseño global
+   Documentado en docs/dia-06-guia-de-estilos.md
+   ========================================================================= */
+
+:root {
+  /* --- Color: superficies y texto --- */
+  --color-bg: #f9fafb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f9;
+  --color-text: #111827;
+  --color-text-muted: #4b5563;
+  --color-text-subtle: #5f6874;
+  --color-border: #d1d5db;
+  --color-border-subtle: #e5e7eb;
+
+  /* --- Color: marca y acciones --- */
+  --color-primary: #1d4ed8;
+  --color-primary-contrast: #ffffff;
+  --color-danger: #b91c1c;
+  --color-focus: #1d4ed8;
+
+  /* --- Color: barra superior --- */
+  --color-header-bg: #1f2937;
+  --color-header-text: #ffffff;
+  --color-header-text-muted: #d1d5db;
+
+  /* --- Color: badges de prioridad --- */
+  --color-priority-low-bg: #dbeafe;
+  --color-priority-low-text: #1e40af;
+  --color-priority-medium-bg: #fef3c7;
+  --color-priority-medium-text: #92400e;
+  --color-priority-high-bg: #fed7aa;
+  --color-priority-high-text: #9a3412;
+  --color-priority-critical-bg: #fecaca;
+  --color-priority-critical-text: #991b1b;
+
+  /* --- Color: badges de estado --- */
+  --color-status-open-bg: #e0e7ff;
+  --color-status-open-text: #3730a3;
+  --color-status-progress-bg: #fef9c3;
+  --color-status-progress-text: #854d0e;
+  --color-status-resolved-bg: #dcfce7;
+  --color-status-resolved-text: #166534;
+  --color-status-closed-bg: #e5e7eb;
+  --color-status-closed-text: #4b5563;
+
+  /* --- Espaciado (escala de 4px) --- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* --- Tipografía --- */
+  --font-family-base: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-sm: 0.85rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xs: 0.75rem;
+  --line-height-base: 1.5;
+
+  /* --- Bordes y elevación --- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-pill: 999px;
+  --border-width: 1px;
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 8%);
+  --shadow-md: 0 4px 12px rgb(15 23 42 / 10%);
+
+  /* --- Layout --- */
+  --layout-max-width: 75rem;
+  --card-min-width: 18rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Evita el zoom automático del texto en iOS al rotar el dispositivo. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+/* Ninguna imagen o multimedia puede desbordar su contenedor. */
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* -------------------------------------------------------------------------
+   Estado de enfoque
+   Un único anillo de foco consistente para todo lo que sea alcanzable con
+   teclado. `:focus-visible` lo muestra al navegar con teclado pero no al
+   hacer clic con el ratón.
+   ------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Nunca eliminar el foco sin reemplazarlo: si el navegador no soporta
+   :focus-visible, se conserva el contorno por defecto. */
+
+/* -------------------------------------------------------------------------
+   Botones — clases globales (no encapsuladas) del sistema de diseño
+   ------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.25rem;
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-surface-muted);
+    border-color: var(--color-text-muted);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    border-color: var(--color-border-subtle);
+    background-color: var(--color-surface-muted);
+    color: var(--color-text-subtle);
+  }
+
+  &--primary {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-primary-contrast);
+
+    &:hover:not(:disabled) {
+      background-color: #1a43b8;
+      border-color: #1a43b8;
+    }
+  }
+
+  &--danger {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+
+    &:hover:not(:disabled) {
+      background-color: #fef2f2;
+      border-color: var(--color-danger);
+    }
+  }
+
+  /* Botón que solo muestra un icono: cuadrado y sin texto visible.
+     Obliga a aportar el nombre accesible con aria-label. */
+  &--icon {
+    width: 2.25rem;
+    padding: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Utilidades
+   ------------------------------------------------------------------------- */
+
+/* Contenido visible solo para lectores de pantalla. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/* Enlace para saltar la navegación: oculto hasta recibir el foco. */
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: var(--space-2);
+  z-index: 10;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: var(--color-primary-contrast);
+  transform: translateY(-200%);
+
+  &:focus {
+    transform: translateY(0);
+  }
+}
+
+/* Respeta la preferencia del sistema de reducir el movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

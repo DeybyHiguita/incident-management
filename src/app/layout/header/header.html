@@ -1,19 +1,37 @@
 <header class="app-header">
-  <h1 class="app-header__title">{{ systemTitle }}</h1>
+  <div class="app-header__bar">
+    <h1 class="app-header__title">{{ systemTitle }}</h1>
 
-  <div class="app-header__user">
-    <span class="app-header__user-name">{{ userName }}</span>
-    <button
-      type="button"
-      class="app-header__toggle"
-      [attr.aria-pressed]="showUserDetails()"
-      (click)="toggleUserDetails()"
-    >
-      {{ showUserDetails() ? 'Ocultar detalles' : 'Mostrar detalles' }}
-    </button>
+    <nav class="app-header__nav" aria-label="Navegación principal">
+      <ul class="app-header__nav-list">
+        <li>
+          <a
+            class="app-header__nav-link"
+            routerLink="/incidents"
+            routerLinkActive="app-header__nav-link--active"
+          >
+            Incidencias
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="app-header__user">
+      <span class="app-header__user-name">{{ userName }}</span>
+      <button
+        type="button"
+        class="btn app-header__toggle"
+        id="user-details-toggle"
+        [attr.aria-expanded]="showUserDetails()"
+        aria-controls="user-details"
+        (click)="toggleUserDetails()"
+      >
+        {{ showUserDetails() ? 'Ocultar detalles' : 'Mostrar detalles' }}
+      </button>
+    </div>
   </div>
 
   @if (showUserDetails()) {
-    <p class="app-header__details">Sesión simulada de: {{ userName }}</p>
+    <p class="app-header__details" id="user-details">Sesión simulada de: {{ userName }}</p>
   }
 </header>

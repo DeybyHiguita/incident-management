@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { Incident } from '../../../../core/models/incident.model';
 
 @Component({
   selector: 'app-incident-card',
-  imports: [],
+  imports: [DatePipe],
   templateUrl: './incident-card.html',
   styleUrl: './incident-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

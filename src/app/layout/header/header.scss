@@ -1,37 +1,102 @@
+@use 'breakpoints' as bp;
+
 .app-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  background-color: #1f2937;
-  color: #ffffff;
+  padding: var(--space-4);
+  background-color: var(--color-header-bg);
+  color: var(--color-header-text);
+
+  @include bp.respond-from(sm) {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  &__bar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: var(--layout-max-width);
+    margin-inline: auto;
+
+    /* A partir de tablet la barra pasa a una sola fila. */
+    @include bp.respond-from(sm) {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-4);
+    }
+  }
 
   &__title {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: var(--font-size-lg);
+
+    /* Un título largo se parte en vez de forzar scroll horizontal. */
+    overflow-wrap: anywhere;
+  }
+
+  &__nav {
+    @include bp.respond-from(sm) {
+      margin-inline-start: auto;
+    }
+  }
+
+  &__nav-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__nav-link {
+    display: inline-block;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--color-header-text);
+    text-decoration: underline;
+
+    &:hover {
+      background-color: rgb(255 255 255 / 12%);
+    }
+
+    &--active {
+      background-color: rgb(255 255 255 / 18%);
+      font-weight: 600;
+      text-decoration: none;
+    }
   }
 
   &__user {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
   }
 
+  /* Hereda `.btn` del sistema de diseño; aquí solo se invierte para el
+     fondo oscuro de la barra. */
   &__toggle {
-    cursor: pointer;
-    border: 1px solid #ffffff;
-    border-radius: 0.25rem;
-    background: transparent;
+    border-color: var(--color-header-text);
+    background-color: transparent;
     color: inherit;
-    padding: 0.35rem 0.75rem;
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-header-text);
+      background-color: rgb(255 255 255 / 12%);
+    }
   }
 
   &__details {
-    flex-basis: 100%;
-    margin: 0;
-    font-size: 0.9rem;
-    color: #d1d5db;
+    max-width: var(--layout-max-width);
+    margin: var(--space-3) auto 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-header-text-muted);
+  }
+
+  /* El anillo de foco global es azul oscuro; sobre la barra oscura se
+     cambia a blanco para que siga siendo visible. */
+  :focus-visible {
+    outline-color: var(--color-header-text);
   }
 }

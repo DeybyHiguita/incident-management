@@ -1,9 +1,10 @@
-<section class="incident-list">
+<section class="incident-list" aria-labelledby="incident-list-title">
   <header class="incident-list__header">
-    <h2>Incidencias registradas</h2>
+    <h2 class="incident-list__title" id="incident-list-title">Incidencias registradas</h2>
+
     <button
       type="button"
-      class="incident-list__restore"
+      class="btn"
       [disabled]="isRestoreDisabled()"
       (click)="restoreIncidents()"
     >
@@ -11,24 +12,28 @@
     </button>
   </header>
 
-  @if (selectedIncident(); as incident) {
-    <p class="incident-list__selection">
+  <!-- aria-live: los lectores de pantalla anuncian el cambio de selección
+       sin que el usuario tenga que ir a buscarlo. -->
+  <p class="incident-list__selection" aria-live="polite">
+    @if (selectedIncident(); as incident) {
       Incidencia seleccionada: <strong>{{ incident.title }}</strong> ({{ incident.id }})
-    </p>
-  } @else {
-    <p class="incident-list__selection incident-list__selection--empty">
-      Ninguna incidencia seleccionada.
-    </p>
-  }
+    } @else {
+      <span class="incident-list__selection--empty">Ninguna incidencia seleccionada.</span>
+    }
+  </p>
 
-  @for (incident of incidents(); track incident.id) {
-    <app-incident-card
-      [incident]="incident"
-      [selected]="incident.id === selectedId()"
-      (incidentSelected)="onIncidentSelected($event)"
-      (deleteRequested)="onDeleteRequested($event)"
-    />
-  } @empty {
-    <p class="incident-list__empty">No hay incidencias registradas.</p>
-  }
+  <ul class="incident-list__grid">
+    @for (incident of incidents(); track incident.id) {
+      <li class="incident-list__item">
+        <app-incident-card
+          [incident]="incident"
+          [selected]="incident.id === selectedId()"
+          (incidentSelected)="onIncidentSelected($event)"
+          (deleteRequested)="onDeleteRequested($event)"
+        />
+      </li>
+    } @empty {
+      <li class="incident-list__empty">No hay incidencias registradas.</li>
+    }
+  </ul>
 </section>

@@ -3,6 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { IncidentList } from './incident-list';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
 
+/** Ancho de referencia del teléfono más estrecho que soportamos. */
+const NARROW_VIEWPORT_PX = 320;
+
 describe('IncidentList', () => {
   let fixture: ComponentFixture<IncidentList>;
   let component: IncidentList;
@@ -35,7 +38,7 @@ describe('IncidentList', () => {
   it('elimina la incidencia del contenedor cuando el hijo lo solicita', () => {
     const removed = MOCK_INCIDENTS[0];
 
-    clickIn(cards()[0], 'Eliminar');
+    clickIn(cards()[0], 'Eliminar incidencia');
 
     expect(cards().length).toBe(MOCK_INCIDENTS.length - 1);
     expect(text()).not.toContain(removed.title);
@@ -44,21 +47,79 @@ describe('IncidentList', () => {
   it('no muta la colección original al eliminar (inmutabilidad)', () => {
     const snapshot = [...MOCK_INCIDENTS];
 
-    clickIn(cards()[0], 'Eliminar');
+    clickIn(cards()[0], 'Eliminar incidencia');
 
     expect(MOCK_INCIDENTS).toEqual(snapshot);
   });
 
   it('muestra el estado vacío al eliminar todas y permite restaurar', () => {
     while (cards().length > 0) {
-      clickIn(cards()[0], 'Eliminar');
+      clickIn(cards()[0], 'Eliminar incidencia');
     }
 
     expect(text()).toContain('No hay incidencias registradas.');
 
-    clickButton('Restaurar lista');
+    clickIn(fixture.nativeElement, 'Restaurar lista');
 
     expect(cards().length).toBe(MOCK_INCIDENTS.length);
+  });
+
+  // --- Día 6: accesibilidad y diseño adaptable -----------------------------
+
+  it('agrupa las tarjetas en una lista semántica', () => {
+    const items = fixture.nativeElement.querySelectorAll('ul.incident-list__grid > li');
+
+    expect(items.length).toBe(MOCK_INCIDENTS.length);
+  });
+
+  it('todos los controles interactivos son elementos nativos con nombre accesible', () => {
+    const controls = Array.from<HTMLElement>(
+      fixture.nativeElement.querySelectorAll('button, a, input, select, textarea'),
+    );
+
+    expect(controls.length).toBeGreaterThan(0);
+    for (const control of controls) {
+      // Elementos nativos: alcanzables con Tab sin necesidad de tabindex.
+      expect(['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA']).toContain(control.tagName);
+      expect(accessibleName(control))
+        .withContext(`"${control.className}" no tiene nombre accesible`)
+        .toBeTruthy();
+    }
+  });
+
+  it('anuncia el cambio de selección en una región aria-live', () => {
+    const live: HTMLElement = fixture.nativeElement.querySelector('[aria-live="polite"]');
+
+    expect(live.textContent).toContain('Ninguna incidencia seleccionada');
+
+    clickIn(cards()[0], 'Seleccionar');
+
+    expect(live.textContent).toContain(MOCK_INCIDENTS[0].title);
+  });
+
+  it(`no desborda horizontalmente a ${NARROW_VIEWPORT_PX}px de ancho`, () => {
+    const host: HTMLElement = fixture.nativeElement;
+    host.style.width = `${NARROW_VIEWPORT_PX}px`;
+    fixture.detectChanges();
+
+    // Tolerancia de 1px por redondeo sub-píxel del navegador.
+    expect(host.scrollWidth).toBeLessThanOrEqual(host.clientWidth + 1);
+
+    for (const card of cards()) {
+      expect(card.scrollWidth)
+        .withContext('Una tarjeta desborda su columna')
+        .toBeLessThanOrEqual(card.clientWidth + 1);
+    }
+  });
+
+  it('deshabilita el botón de restaurar cuando la lista está completa', () => {
+    const restore = findIn(fixture.nativeElement, 'Restaurar lista');
+
+    expect(restore.disabled).toBe(true);
+
+    clickIn(cards()[0], 'Eliminar incidencia');
+
+    expect(findIn(fixture.nativeElement, 'Restaurar lista').disabled).toBe(false);
   });
 
   function cards(): HTMLElement[] {
@@ -69,19 +130,23 @@ describe('IncidentList', () => {
     return fixture.nativeElement.textContent ?? '';
   }
 
-  function clickIn(root: ParentNode, label: string): void {
-    const buttons: HTMLButtonElement[] = Array.from(root.querySelectorAll('button'));
-    const button = buttons.find((candidate) => candidate.textContent?.trim() === label);
+  function accessibleName(element: HTMLElement): string {
+    return element.getAttribute('aria-label') ?? element.textContent?.trim() ?? '';
+  }
+
+  function findIn(root: ParentNode, label: string): HTMLButtonElement {
+    const buttons = Array.from<HTMLButtonElement>(root.querySelectorAll('button'));
+    const button = buttons.find((candidate) => accessibleName(candidate).startsWith(label));
 
     if (!button) {
       throw new Error(`No se encontró el botón "${label}"`);
     }
 
-    button.click();
-    fixture.detectChanges();
+    return button;
   }
 
-  function clickButton(label: string): void {
-    clickIn(fixture.nativeElement, label);
+  function clickIn(root: ParentNode, label: string): void {
+    findIn(root, label).click();
+    fixture.detectChanges();
   }
 });
