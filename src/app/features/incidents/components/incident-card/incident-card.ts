@@ -1,10 +1,19 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, LowerCasePipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Incident } from '../../../../core/models/incident.model';
+import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
+import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
 
 @Component({
   selector: 'app-incident-card',
-  imports: [DatePipe],
+  imports: [
+    DatePipe,
+    LowerCasePipe,
+    TitleCasePipe,
+    UpperCasePipe,
+    IncidentPriorityPipe,
+    RelativeTimePipe,
+  ],
   templateUrl: './incident-card.html',
   styleUrl: './incident-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

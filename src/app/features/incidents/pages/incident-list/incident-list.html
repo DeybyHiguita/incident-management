@@ -16,7 +16,8 @@
        sin que el usuario tenga que ir a buscarlo. -->
   <p class="incident-list__selection" aria-live="polite">
     @if (selectedIncident(); as incident) {
-      Incidencia seleccionada: <strong>{{ incident.title }}</strong> ({{ incident.id }})
+      Incidencia seleccionada: <strong>{{ incident.title }}</strong>
+      ({{ incident.id | uppercase }} · prioridad {{ incident.priority | incidentPriority }})
     } @else {
       <span class="incident-list__selection--empty">Ninguna incidencia seleccionada.</span>
     }

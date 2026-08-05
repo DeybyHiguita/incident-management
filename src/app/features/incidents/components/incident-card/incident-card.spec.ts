@@ -88,8 +88,13 @@ describe('IncidentCard', () => {
   it('expone la fecha de creación en un elemento <time> legible por máquinas', () => {
     const time: HTMLTimeElement = fixture.nativeElement.querySelector('time');
 
+    // Valor exacto para las máquinas...
     expect(time.getAttribute('datetime')).toBe(INCIDENT.createdAt);
-    expect(time.textContent).toContain('27/07/2026');
+    // ...fecha completa en el tooltip...
+    expect(time.getAttribute('title')).toContain('2026');
+    // ...y lectura rápida en el texto visible (relativa, no una fecha fija:
+    // el test no se rompe con el paso del tiempo).
+    expect(time.textContent?.trim()).toMatch(/^Creada /);
   });
 
   function accessibleName(element: HTMLElement): string {
