@@ -1,9 +1,10 @@
 import { Component, Input, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { FocusWithin } from '../../shared/directives/focus-within';
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, FocusWithin],
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })

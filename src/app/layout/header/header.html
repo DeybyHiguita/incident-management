@@ -16,7 +16,8 @@
       </ul>
     </nav>
 
-    <div class="app-header__user">
+    <!-- La misma directiva de foco que usa la tarjeta, en otro componente. -->
+    <div class="app-header__user" appFocusWithin>
       <span class="app-header__user-name">{{ userName }}</span>
       <button
         type="button"

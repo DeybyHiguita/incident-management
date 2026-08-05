@@ -1,4 +1,9 @@
-<article class="incident-card" [class.incident-card--selected]="selected()">
+<article
+  class="incident-card"
+  [class.incident-card--selected]="selected()"
+  [appIncidentHighlight]="incident().priority"
+  appFocusWithin
+>
   <header class="incident-card__header">
     <h3 class="incident-card__title">{{ incident().title }}</h3>
 

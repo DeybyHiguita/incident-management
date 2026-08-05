@@ -4,10 +4,11 @@ import { Incident } from '../../../../core/models/incident.model';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
 import { IncidentCard } from '../../components/incident-card/incident-card';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
+import { IncidentHighlight } from '../../../../shared/directives/incident-highlight';
 
 @Component({
   selector: 'app-incident-list',
-  imports: [IncidentCard, UpperCasePipe, IncidentPriorityPipe],
+  imports: [IncidentCard, UpperCasePipe, IncidentPriorityPipe, IncidentHighlight],
   templateUrl: './incident-list.html',
   styleUrl: './incident-list.scss',
 })

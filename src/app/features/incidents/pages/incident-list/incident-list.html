@@ -14,7 +14,13 @@
 
   <!-- aria-live: los lectores de pantalla anuncian el cambio de selección
        sin que el usuario tenga que ir a buscarlo. -->
-  <p class="incident-list__selection" aria-live="polite">
+  <!-- La misma directiva de resaltado, aplicada a un <p> en otro componente:
+       no depende de la tarjeta ni de ningún elemento concreto. -->
+  <p
+    class="incident-list__selection"
+    aria-live="polite"
+    [appIncidentHighlight]="selectedIncident()?.priority"
+  >
     @if (selectedIncident(); as incident) {
       Incidencia seleccionada: <strong>{{ incident.title }}</strong>
       ({{ incident.id | uppercase }} · prioridad {{ incident.priority | incidentPriority }})
