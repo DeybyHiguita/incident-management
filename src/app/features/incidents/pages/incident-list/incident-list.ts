@@ -7,7 +7,9 @@ import {
 } from '../../../../core/models/incident.model';
 import { IncidentSearchCriteria } from '../../../../core/models/incident-search-criteria.model';
 import { IncidentService } from '../../../../core/services/incident-service';
+import { UserService } from '../../../../core/services/user-service';
 import { IncidentCard } from '../../components/incident-card/incident-card';
+import { IncidentForm, IncidentFormValue } from '../../components/incident-form/incident-form';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
 import { IncidentHighlight } from '../../../../shared/directives/incident-highlight';
 
@@ -16,12 +18,19 @@ const ANY = '';
 
 @Component({
   selector: 'app-incident-list',
-  imports: [IncidentCard, UpperCasePipe, IncidentPriorityPipe, IncidentHighlight],
+  imports: [
+    IncidentCard,
+    IncidentForm,
+    UpperCasePipe,
+    IncidentPriorityPipe,
+    IncidentHighlight,
+  ],
   templateUrl: './incident-list.html',
   styleUrl: './incident-list.scss',
 })
 export class IncidentList {
   private readonly incidentService = inject(IncidentService);
+  private readonly userService = inject(UserService);
 
   // --- Estado del dominio (vive en el servicio) ----------------------------
 
@@ -94,6 +103,17 @@ export class IncidentList {
     this.searchTerm.set(ANY);
     this.statusFilter.set(ANY);
     this.priorityFilter.set(ANY);
+  }
+
+  /**
+   * Completa lo que el formulario no puede saber —quién reporta— y delega
+   * el registro en el servicio, que es quien decide id, fechas y estado.
+   */
+  protected onIncidentSubmitted(value: IncidentFormValue): void {
+    this.incidentService.create({
+      ...value,
+      reporterId: this.userService.currentUser().id,
+    });
   }
 
   protected onIncidentSelected(incident: Incident): void {

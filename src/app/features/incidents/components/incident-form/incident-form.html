@@ -1,0 +1,107 @@
+<form class="incident-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+  <h3 class="incident-form__title">Registrar una incidencia</h3>
+
+  <div class="incident-form__field">
+    <label class="incident-form__label" for="incident-title">
+      Título <span aria-hidden="true">*</span>
+    </label>
+    <input
+      class="incident-form__control"
+      id="incident-title"
+      type="text"
+      formControlName="title"
+      required
+      [attr.aria-invalid]="showError('title')"
+      [attr.aria-describedby]="showError('title') ? 'incident-title-error' : null"
+    />
+    @if (showError('title')) {
+      <p class="incident-form__error" id="incident-title-error">{{ errorMessage('title') }}</p>
+    }
+  </div>
+
+  <div class="incident-form__field">
+    <label class="incident-form__label" for="incident-description">
+      Descripción <span aria-hidden="true">*</span>
+    </label>
+    <textarea
+      class="incident-form__control"
+      id="incident-description"
+      rows="3"
+      formControlName="description"
+      required
+      [attr.aria-invalid]="showError('description')"
+      [attr.aria-describedby]="showError('description') ? 'incident-description-error' : null"
+    ></textarea>
+    @if (showError('description')) {
+      <p class="incident-form__error" id="incident-description-error">
+        {{ errorMessage('description') }}
+      </p>
+    }
+  </div>
+
+  <div class="incident-form__row">
+    <div class="incident-form__field">
+      <label class="incident-form__label" for="incident-category">
+        Categoría <span aria-hidden="true">*</span>
+      </label>
+      <input
+        class="incident-form__control"
+        id="incident-category"
+        type="text"
+        formControlName="category"
+        required
+        [attr.aria-invalid]="showError('category')"
+        [attr.aria-describedby]="showError('category') ? 'incident-category-error' : null"
+      />
+      @if (showError('category')) {
+        <p class="incident-form__error" id="incident-category-error">
+          {{ errorMessage('category') }}
+        </p>
+      }
+    </div>
+
+    <div class="incident-form__field">
+      <label class="incident-form__label" for="incident-priority">
+        Prioridad <span aria-hidden="true">*</span>
+      </label>
+      <select
+        class="incident-form__control"
+        id="incident-priority"
+        formControlName="priority"
+        required
+        [attr.aria-invalid]="showError('priority')"
+        [attr.aria-describedby]="showError('priority') ? 'incident-priority-error' : null"
+      >
+        <option value="">Selecciona una prioridad</option>
+        <option value="LOW">Baja</option>
+        <option value="MEDIUM">Media</option>
+        <option value="HIGH">Alta</option>
+        <option value="CRITICAL">Crítica</option>
+      </select>
+      @if (showError('priority')) {
+        <p class="incident-form__error" id="incident-priority-error">
+          {{ errorMessage('priority') }}
+        </p>
+      }
+    </div>
+  </div>
+
+  <p class="incident-form__hint">Los campos marcados con * son obligatorios.</p>
+
+  <div class="incident-form__actions">
+    <!-- El envío se bloquea mientras el formulario sea inválido. El
+         `novalidate` del <form> desactiva los mensajes del navegador para
+         que los únicos visibles sean los nuestros. -->
+    <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
+      Registrar incidencia
+    </button>
+    <button type="button" class="btn" (click)="resetForm()">Limpiar</button>
+  </div>
+
+  <!-- Confirmación del registro. `role="status"` lo anuncia sin interrumpir. -->
+  <p class="incident-form__success" role="status">
+    @if (lastRegisteredTitle(); as title) {
+      Incidencia «{{ title }}» registrada correctamente.
+    }
+  </p>
+</form>

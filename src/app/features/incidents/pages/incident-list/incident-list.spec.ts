@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { IncidentList } from './incident-list';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
 import { IncidentService } from '../../../../core/services/incident-service';
+import { UserService } from '../../../../core/services/user-service';
 
 /** Ancho de referencia del teléfono más estrecho que soportamos. */
 const NARROW_VIEWPORT_PX = 320;
@@ -259,6 +260,56 @@ describe('IncidentList', () => {
 
       expect(cards().length).toBe(before - 1);
     });
+  });
+
+  describe('registro desde el formulario', () => {
+    it('registra la incidencia y la muestra en el listado', () => {
+      const before = cards().length;
+
+      fillAndSubmitForm();
+
+      expect(cards().length).toBe(before + 1);
+      expect(text()).toContain('Fuga en el aire acondicionado');
+    });
+
+    it('completa el reporterId con el usuario de la sesión', () => {
+      const currentUser = TestBed.inject(UserService).currentUser();
+
+      fillAndSubmitForm();
+
+      const created = service.getAll().at(-1)!;
+      expect(created.reporterId).toBe(currentUser.id);
+      // El estado inicial y las fechas los pone el servicio, no el formulario.
+      expect(created.status).toBe('OPEN');
+      expect(created.id).toBe('inc-006');
+    });
+
+    it('actualiza los indicadores derivados', () => {
+      const totalBefore = Number(stat('Totales'));
+      const openBefore = Number(stat('Abiertas'));
+
+      fillAndSubmitForm();
+
+      expect(stat('Totales')).toBe(String(totalBefore + 1));
+      expect(stat('Abiertas')).toBe(String(openBefore + 1));
+    });
+
+    function fillAndSubmitForm(): void {
+      setValue('#incident-title', 'Fuga en el aire acondicionado', 'input');
+      setValue('#incident-description', 'Gotea sobre los equipos del rack.', 'input');
+      setValue('#incident-category', 'Infraestructura', 'input');
+      setValue('#incident-priority', 'HIGH', 'change');
+
+      fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+    }
+
+    function setValue(selector: string, value: string, eventName: string): void {
+      const control: HTMLInputElement = fixture.nativeElement.querySelector(selector);
+      control.value = value;
+      control.dispatchEvent(new Event(eventName));
+      fixture.detectChanges();
+    }
   });
 
   function stat(label: string): string {

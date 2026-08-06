@@ -12,6 +12,8 @@
     </button>
   </header>
 
+  <app-incident-form (submitted)="onIncidentSubmitted($event)" />
+
   <!-- Indicadores derivados: ninguno se guarda, todos son computed sobre la
        colección del servicio. -->
   <ul class="stats" aria-label="Resumen de incidencias">

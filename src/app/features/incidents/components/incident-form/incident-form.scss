@@ -1,0 +1,91 @@
+@use 'breakpoints' as bp;
+
+.incident-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+
+  &__title {
+    margin: 0;
+    font-size: var(--font-size-base);
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+
+    @include bp.respond-from(sm) {
+      flex-direction: row;
+
+      > * {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+    }
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+
+  &__control {
+    min-height: 2.25rem;
+    max-width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-size-sm);
+
+    /* El borde rojo acompaña al mensaje de error; nunca es el único aviso. */
+    &[aria-invalid='true'] {
+      border-color: var(--color-danger);
+    }
+  }
+
+  textarea.incident-form__control {
+    resize: vertical;
+  }
+
+  &__error {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-danger);
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  &__success {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-status-resolved-text);
+
+    /* Reserva el hueco para que la confirmación no desplace el contenido. */
+    min-height: 1.25rem;
+  }
+}
