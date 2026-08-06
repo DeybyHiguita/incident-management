@@ -1,16 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Header } from './layout/header/header';
 import { Footer } from './layout/footer/footer';
-import { MOCK_USERS } from './core/mocks/users.mock';
+import { UserService } from './core/services/user-service';
 
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet, Header, Footer],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App {
+  private readonly userService = inject(UserService);
+
   protected readonly systemTitle = 'Sistema de Gestión de Incidencias';
-  protected readonly currentUser = MOCK_USERS[0];
+
+  /** Señal: si la sesión cambiara, la cabecera se actualizaría sola. */
+  protected readonly currentUser = this.userService.currentUser;
 }

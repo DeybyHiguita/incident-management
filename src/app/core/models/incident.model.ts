@@ -14,3 +14,13 @@ export interface Incident {
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * Datos que aporta quien registra una incidencia.
+ *
+ * El `id`, las marcas de tiempo y el estado inicial no se piden: los asigna
+ * el servicio, que es el único dueño de esas reglas.
+ */
+export type IncidentDraft = Omit<Incident, 'id' | 'status' | 'createdAt' | 'updatedAt'> & {
+  readonly status?: IncidentStatus;
+};

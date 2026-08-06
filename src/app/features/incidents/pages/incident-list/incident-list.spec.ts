@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { IncidentList } from './incident-list';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
+import { IncidentService } from '../../../../core/services/incident-service';
 
 /** Ancho de referencia del teléfono más estrecho que soportamos. */
 const NARROW_VIEWPORT_PX = 320;
@@ -9,11 +10,17 @@ const NARROW_VIEWPORT_PX = 320;
 describe('IncidentList', () => {
   let fixture: ComponentFixture<IncidentList>;
   let component: IncidentList;
+  let service: IncidentService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [IncidentList],
     }).compileComponents();
+
+    // El servicio es un singleton: se reinicia para que cada prueba parta
+    // del mismo estado conocido.
+    service = TestBed.inject(IncidentService);
+    service.reset();
 
     fixture = TestBed.createComponent(IncidentList);
     component = fixture.componentInstance;
@@ -50,6 +57,24 @@ describe('IncidentList', () => {
     clickIn(cards()[0], 'Eliminar incidencia');
 
     expect(MOCK_INCIDENTS).toEqual(snapshot);
+  });
+
+  it('delega la eliminación en el servicio en vez de gestionar los datos', () => {
+    spyOn(service, 'remove').and.callThrough();
+
+    clickIn(cards()[0], 'Eliminar incidencia');
+
+    expect(service.remove).toHaveBeenCalledWith(MOCK_INCIDENTS[0].id);
+  });
+
+  it('refleja los cambios que otro consumidor haga en el servicio', () => {
+    // Nadie tocó el componente: el estado vive en el servicio y la vista
+    // se actualiza sola porque lee una señal.
+    service.remove(MOCK_INCIDENTS[0].id);
+    fixture.detectChanges();
+
+    expect(cards().length).toBe(MOCK_INCIDENTS.length - 1);
+    expect(text()).not.toContain(MOCK_INCIDENTS[0].title);
   });
 
   it('muestra el estado vacío al eliminar todas y permite restaurar', () => {
