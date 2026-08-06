@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { Incident, IncidentDraft } from '../models/incident.model';
 import { IncidentSearchCriteria } from '../models/incident-search-criteria.model';
 import { MOCK_INCIDENTS } from '../mocks/incidents.mock';
@@ -27,6 +27,26 @@ export class IncidentService {
    * actualizan solos, pero no disponen de `set` ni de `update`.
    */
   readonly incidents = this.collection.asReadonly();
+
+  // --- Indicadores derivados -----------------------------------------------
+  //
+  // Son `computed`, no campos: se calculan a partir de la colección y se
+  // recalculan solos cuando cambia. Guardarlos en un `signal` aparte
+  // obligaría a acordarse de actualizarlos en cada alta y cada baja, que es
+  // exactamente el tipo de estado que se desincroniza.
+
+  /** Número total de incidencias registradas. */
+  readonly totalCount = computed(() => this.collection().length);
+
+  /** Incidencias con prioridad crítica, sin importar su estado. */
+  readonly criticalCount = computed(
+    () => this.collection().filter((incident) => incident.priority === 'CRITICAL').length,
+  );
+
+  /** Incidencias en estado `OPEN`, es decir, aún sin atender. */
+  readonly openCount = computed(
+    () => this.collection().filter((incident) => incident.status === 'OPEN').length,
+  );
 
   // --- Consulta ------------------------------------------------------------
 

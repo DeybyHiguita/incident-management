@@ -24,6 +24,12 @@
     font-size: var(--font-size-lg);
   }
 
+  &__count {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
   &__selection {
     margin: 0;
     font-size: var(--font-size-sm);
@@ -55,5 +61,84 @@
     border-radius: var(--radius-md);
     text-align: center;
     color: var(--color-text-muted);
+  }
+}
+
+/* Indicadores derivados. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-width) solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+
+    &--critical {
+      border-inline-start-color: var(--color-danger);
+    }
+
+    &--open {
+      border-inline-start-color: var(--color-primary);
+    }
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  &__label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+}
+
+/* Búsqueda y filtros. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    /* Permite que los campos se encojan sin desbordar en móvil. */
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+
+  &__control {
+    min-height: 2.25rem;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    max-width: 100%;
   }
 }

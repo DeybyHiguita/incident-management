@@ -25,6 +25,18 @@
     box-shadow: var(--shadow-md);
   }
 
+  /* Resaltado que aplica [appIncidentHighlight] (Día 8).
+     Se redefine aquí, y no solo en el `styles.scss` global, porque los
+     estilos de componente llevan el atributo de encapsulación
+     (`.incident-card[_ngcontent-x]`) y ganan en especificidad a la clase
+     global. Además, el `border` de arriba es un shorthand y pisaría
+     `border-inline-start`. El global sigue sirviendo para los elementos sin
+     estilos propios, como el párrafo de selección del listado. */
+  &.is-critical {
+    border-inline-start: 4px solid var(--color-danger);
+    background-color: #fef2f2;
+  }
+
   &--selected {
     border-color: var(--color-primary);
     /* Segundo indicador además del color, para no depender solo de él. */

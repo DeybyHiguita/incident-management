@@ -97,6 +97,30 @@ describe('IncidentCard', () => {
     expect(time.textContent?.trim()).toMatch(/^Creada /);
   });
 
+  describe('resaltado de incidencias críticas', () => {
+    it('no resalta una incidencia que no es crítica', () => {
+      const card: HTMLElement = fixture.nativeElement.querySelector('.incident-card');
+
+      expect(card.classList).not.toContain('is-critical');
+      expect(getComputedStyle(card).borderLeftWidth).toBe('1px');
+    });
+
+    it('aplica el resaltado visible, no solo la clase', () => {
+      // Comprobar únicamente la clase no basta: la encapsulación de estilos
+      // puede hacer que el CSS del componente gane a la clase global y el
+      // resaltado no llegue a verse.
+      fixture.componentRef.setInput('incident', { ...INCIDENT, priority: 'CRITICAL' });
+      fixture.detectChanges();
+
+      const card: HTMLElement = fixture.nativeElement.querySelector('.incident-card');
+      const styles = getComputedStyle(card);
+
+      expect(card.classList).toContain('is-critical');
+      expect(styles.borderLeftWidth).toBe('4px');
+      expect(styles.borderLeftColor).toBe('rgb(185, 28, 28)');
+    });
+  });
+
   function accessibleName(element: HTMLElement): string {
     return element.getAttribute('aria-label') ?? element.textContent?.trim() ?? '';
   }

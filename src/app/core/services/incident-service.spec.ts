@@ -145,6 +145,70 @@ describe('IncidentService', () => {
     });
   });
 
+  describe('indicadores derivados', () => {
+    it('cuenta el total de incidencias', () => {
+      expect(service.totalCount()).toBe(MOCK_INCIDENTS.length);
+    });
+
+    it('cuenta las incidencias críticas', () => {
+      const expected = MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length;
+
+      expect(service.criticalCount()).toBe(expected);
+    });
+
+    it('cuenta las incidencias abiertas', () => {
+      const expected = MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length;
+
+      expect(service.openCount()).toBe(expected);
+    });
+
+    it('se recalculan solos al crear', () => {
+      const before = service.totalCount();
+
+      service.create({ ...DRAFT, priority: 'CRITICAL' });
+
+      expect(service.totalCount()).toBe(before + 1);
+      expect(service.criticalCount()).toBe(
+        MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length + 1,
+      );
+      // El borrador no trae estado, así que nace OPEN.
+      expect(service.openCount()).toBe(
+        MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length + 1,
+      );
+    });
+
+    it('se recalculan solos al eliminar', () => {
+      const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
+
+      service.remove(critical.id);
+
+      expect(service.totalCount()).toBe(MOCK_INCIDENTS.length - 1);
+      expect(service.criticalCount()).toBe(
+        MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length - 1,
+      );
+    });
+
+    it('vuelven a su valor inicial tras reiniciar', () => {
+      service.remove('inc-001');
+      service.create(DRAFT);
+
+      service.reset();
+
+      expect(service.totalCount()).toBe(MOCK_INCIDENTS.length);
+      expect(service.criticalCount()).toBe(
+        MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length,
+      );
+      expect(service.openCount()).toBe(
+        MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length,
+      );
+    });
+
+    it('son de solo lectura: no se pueden escribir', () => {
+      expect('set' in service.totalCount).toBe(false);
+      expect('update' in service.totalCount).toBe(false);
+    });
+  });
+
   describe('reactividad', () => {
     it('la señal expuesta refleja los cambios', () => {
       const before = service.incidents().length;

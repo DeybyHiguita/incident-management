@@ -12,10 +12,77 @@
     </button>
   </header>
 
-  <!-- aria-live: los lectores de pantalla anuncian el cambio de selección
-       sin que el usuario tenga que ir a buscarlo. -->
-  <!-- La misma directiva de resaltado, aplicada a un <p> en otro componente:
-       no depende de la tarjeta ni de ningún elemento concreto. -->
+  <!-- Indicadores derivados: ninguno se guarda, todos son computed sobre la
+       colección del servicio. -->
+  <ul class="stats" aria-label="Resumen de incidencias">
+    <li class="stats__item">
+      <span class="stats__value">{{ totalCount() }}</span>
+      <span class="stats__label">Totales</span>
+    </li>
+    <li class="stats__item stats__item--critical">
+      <span class="stats__value">{{ criticalCount() }}</span>
+      <span class="stats__label">Críticas</span>
+    </li>
+    <li class="stats__item stats__item--open">
+      <span class="stats__value">{{ openCount() }}</span>
+      <span class="stats__label">Abiertas</span>
+    </li>
+  </ul>
+
+  <div class="filters" role="search">
+    <div class="filters__field">
+      <label class="filters__label" for="search-term">Buscar</label>
+      <input
+        class="filters__control"
+        id="search-term"
+        type="search"
+        placeholder="Título o descripción"
+        [value]="searchTerm()"
+        (input)="onSearchTermChange($any($event.target).value)"
+      />
+    </div>
+
+    <div class="filters__field">
+      <label class="filters__label" for="status-filter">Estado</label>
+      <select
+        class="filters__control"
+        id="status-filter"
+        [value]="statusFilter()"
+        (change)="onStatusFilterChange($any($event.target).value)"
+      >
+        <option value="">Todos</option>
+        <option value="OPEN">Abierta</option>
+        <option value="IN_PROGRESS">En progreso</option>
+        <option value="RESOLVED">Resuelta</option>
+        <option value="CLOSED">Cerrada</option>
+      </select>
+    </div>
+
+    <div class="filters__field">
+      <label class="filters__label" for="priority-filter">Prioridad</label>
+      <select
+        class="filters__control"
+        id="priority-filter"
+        [value]="priorityFilter()"
+        (change)="onPriorityFilterChange($any($event.target).value)"
+      >
+        <option value="">Todas</option>
+        <option value="LOW">Baja</option>
+        <option value="MEDIUM">Media</option>
+        <option value="HIGH">Alta</option>
+        <option value="CRITICAL">Crítica</option>
+      </select>
+    </div>
+
+    <button type="button" class="btn" [disabled]="!hasActiveFilters()" (click)="clearFilters()">
+      Limpiar filtros
+    </button>
+  </div>
+
+  <p class="incident-list__count" aria-live="polite">
+    Mostrando {{ visibleCount() }} de {{ totalCount() }} incidencias.
+  </p>
+
   <p
     class="incident-list__selection"
     aria-live="polite"
@@ -30,7 +97,7 @@
   </p>
 
   <ul class="incident-list__grid">
-    @for (incident of incidents(); track incident.id) {
+    @for (incident of visibleIncidents(); track incident.id) {
       <li class="incident-list__item">
         <app-incident-card
           [incident]="incident"
@@ -40,7 +107,13 @@
         />
       </li>
     } @empty {
-      <li class="incident-list__empty">No hay incidencias registradas.</li>
+      <li class="incident-list__empty">
+        @if (hasActiveFilters()) {
+          Ninguna incidencia coincide con los filtros aplicados.
+        } @else {
+          No hay incidencias registradas.
+        }
+      </li>
     }
   </ul>
 </section>

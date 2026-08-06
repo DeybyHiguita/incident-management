@@ -113,7 +113,9 @@ describe('IncidentList', () => {
   });
 
   it('anuncia el cambio de selección en una región aria-live', () => {
-    const live: HTMLElement = fixture.nativeElement.querySelector('[aria-live="polite"]');
+    const live: HTMLElement = fixture.nativeElement.querySelector(
+      '.incident-list__selection[aria-live="polite"]',
+    );
 
     expect(live.textContent).toContain('Ninguna incidencia seleccionada');
 
@@ -147,6 +149,153 @@ describe('IncidentList', () => {
     expect(findIn(fixture.nativeElement, 'Restaurar lista').disabled).toBe(false);
   });
 
+  // --- Día 10: signals, valores derivados y actualización reactiva ---------
+
+  describe('indicadores derivados', () => {
+    it('muestra el total, las críticas y las abiertas', () => {
+      expect(stat('Totales')).toBe(String(MOCK_INCIDENTS.length));
+      expect(stat('Críticas')).toBe(
+        String(MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length),
+      );
+      expect(stat('Abiertas')).toBe(
+        String(MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length),
+      );
+    });
+
+    it('se actualizan solos al eliminar, sin tocar el componente', () => {
+      const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
+      const criticalBefore = Number(stat('Críticas'));
+
+      service.remove(critical.id);
+      fixture.detectChanges();
+
+      expect(stat('Totales')).toBe(String(MOCK_INCIDENTS.length - 1));
+      expect(stat('Críticas')).toBe(String(criticalBefore - 1));
+    });
+  });
+
+  describe('búsqueda y filtros', () => {
+    it('filtra por término de búsqueda', () => {
+      type_('#search-term', 'impresora');
+
+      expect(cards().length).toBe(1);
+      expect(text()).toContain('Impresora de red desconectada');
+    });
+
+    it('el término de búsqueda no distingue mayúsculas', () => {
+      type_('#search-term', 'IMPRESORA');
+
+      expect(cards().length).toBe(1);
+    });
+
+    it('filtra por estado', () => {
+      select('#status-filter', 'IN_PROGRESS');
+
+      const expected = MOCK_INCIDENTS.filter((i) => i.status === 'IN_PROGRESS').length;
+      expect(cards().length).toBe(expected);
+    });
+
+    it('filtra por prioridad', () => {
+      select('#priority-filter', 'CRITICAL');
+
+      expect(cards().length).toBe(
+        MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length,
+      );
+    });
+
+    it('combina los tres filtros a la vez', () => {
+      select('#status-filter', 'IN_PROGRESS');
+      select('#priority-filter', 'CRITICAL');
+
+      expect(cards().length).toBe(
+        MOCK_INCIDENTS.filter((i) => i.status === 'IN_PROGRESS' && i.priority === 'CRITICAL')
+          .length,
+      );
+    });
+
+    it('actualiza el contador de resultados sin cambiar el total', () => {
+      select('#priority-filter', 'CRITICAL');
+
+      const critical = MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length;
+      expect(counter()).toContain(`Mostrando ${critical} de ${MOCK_INCIDENTS.length}`);
+      // Los indicadores cuentan sobre toda la colección, no sobre lo filtrado.
+      expect(stat('Totales')).toBe(String(MOCK_INCIDENTS.length));
+    });
+
+    it('muestra un mensaje propio cuando ningún resultado coincide', () => {
+      type_('#search-term', 'texto que no aparece en ninguna parte');
+
+      expect(cards().length).toBe(0);
+      expect(text()).toContain('Ninguna incidencia coincide con los filtros aplicados');
+      expect(text()).not.toContain('No hay incidencias registradas.');
+    });
+
+    it('limpia todos los filtros de una vez', () => {
+      type_('#search-term', 'impresora');
+      select('#priority-filter', 'LOW');
+      expect(cards().length).toBe(1);
+
+      clickIn(fixture.nativeElement, 'Limpiar filtros');
+
+      expect(cards().length).toBe(MOCK_INCIDENTS.length);
+      expect(input('#search-term').value).toBe('');
+    });
+
+    it('deshabilita el botón de limpiar cuando no hay filtros activos', () => {
+      expect(findIn(fixture.nativeElement, 'Limpiar filtros').disabled).toBe(true);
+
+      type_('#search-term', 'a');
+
+      expect(findIn(fixture.nativeElement, 'Limpiar filtros').disabled).toBe(false);
+    });
+
+    it('el filtro sigue aplicándose cuando cambian los datos del servicio', () => {
+      select('#priority-filter', 'MEDIUM');
+      const before = cards().length;
+
+      const medium = MOCK_INCIDENTS.find((i) => i.priority === 'MEDIUM')!;
+      service.remove(medium.id);
+      fixture.detectChanges();
+
+      expect(cards().length).toBe(before - 1);
+    });
+  });
+
+  function stat(label: string): string {
+    const items = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.stats__item'));
+    const item = items.find((candidate) =>
+      candidate.querySelector('.stats__label')?.textContent?.trim() === label,
+    );
+
+    if (!item) {
+      throw new Error(`No se encontró el indicador "${label}"`);
+    }
+
+    return item.querySelector('.stats__value')?.textContent?.trim() ?? '';
+  }
+
+  function counter(): string {
+    return fixture.nativeElement.querySelector('.incident-list__count')?.textContent ?? '';
+  }
+
+  function input(selector: string): HTMLInputElement {
+    return fixture.nativeElement.querySelector(selector);
+  }
+
+  function type_(selector: string, value: string): void {
+    const field = input(selector);
+    field.value = value;
+    field.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function select(selector: string, value: string): void {
+    const field: HTMLSelectElement = fixture.nativeElement.querySelector(selector);
+    field.value = value;
+    field.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
   function cards(): HTMLElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('app-incident-card'));
   }
@@ -155,8 +304,25 @@ describe('IncidentList', () => {
     return fixture.nativeElement.textContent ?? '';
   }
 
+  /**
+   * Nombre accesible por orden de prioridad: `aria-label`, después la
+   * `<label for>` asociada (que es de donde lo toman `input` y `select`) y,
+   * por último, el texto del propio elemento.
+   */
   function accessibleName(element: HTMLElement): string {
-    return element.getAttribute('aria-label') ?? element.textContent?.trim() ?? '';
+    const ariaLabel = element.getAttribute('aria-label');
+    if (ariaLabel) {
+      return ariaLabel;
+    }
+
+    if (element.id) {
+      const label = fixture.nativeElement.querySelector(`label[for="${element.id}"]`);
+      if (label?.textContent?.trim()) {
+        return label.textContent.trim();
+      }
+    }
+
+    return element.textContent?.trim() ?? '';
   }
 
   function findIn(root: ParentNode, label: string): HTMLButtonElement {
