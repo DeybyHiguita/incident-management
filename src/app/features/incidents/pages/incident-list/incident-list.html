@@ -2,17 +2,18 @@
   <header class="incident-list__header">
     <h2 class="incident-list__title" id="incident-list-title">Incidencias registradas</h2>
 
-    <button
-      type="button"
-      class="btn"
-      [disabled]="isRestoreDisabled()"
-      (click)="restoreIncidents()"
-    >
-      Restaurar lista
-    </button>
+    <div class="incident-list__header-actions">
+      <a class="btn btn--primary" routerLink="/incidents/new">Registrar incidencia</a>
+      <button
+        type="button"
+        class="btn"
+        [disabled]="isRestoreDisabled()"
+        (click)="restoreIncidents()"
+      >
+        Restaurar lista
+      </button>
+    </div>
   </header>
-
-  <app-incident-form (submitted)="onIncidentSubmitted($event)" />
 
   <!-- Indicadores derivados: ninguno se guarda, todos son computed sobre la
        colección del servicio. -->
@@ -101,8 +102,11 @@
   <ul class="incident-list__grid">
     @for (incident of visibleIncidents(); track incident.id) {
       <li class="incident-list__item">
+        <!-- La ruta la construye el contenedor: la tarjeta sigue sin saber
+             nada del enrutador ni de las direcciones de la aplicación. -->
         <app-incident-card
           [incident]="incident"
+          [detailLink]="['/incidents', incident.id]"
           [selected]="incident.id === selectedId()"
           (incidentSelected)="onIncidentSelected($event)"
           (deleteRequested)="onDeleteRequested($event)"

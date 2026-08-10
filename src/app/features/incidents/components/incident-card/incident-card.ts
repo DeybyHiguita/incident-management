@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe, LowerCasePipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Incident } from '../../../../core/models/incident.model';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
 import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
@@ -17,6 +18,7 @@ import { FocusWithin } from '../../../../shared/directives/focus-within';
     RelativeTimePipe,
     IncidentHighlight,
     FocusWithin,
+    RouterLink,
   ],
   templateUrl: './incident-card.html',
   styleUrl: './incident-card.scss',
@@ -28,6 +30,13 @@ export class IncidentCard {
 
   /** Marca la tarjeta como seleccionada. Opcional, `false` por defecto. */
   readonly selected = input(false);
+
+  /**
+   * Ruta al detalle, ya construida por quien usa la tarjeta. Si no se pasa,
+   * no se muestra el enlace. Así la tarjeta sigue sin conocer las
+   * direcciones de la aplicación y se puede reutilizar en cualquier parte.
+   */
+  readonly detailLink = input<readonly unknown[] | null>(null);
 
   /** El usuario seleccionó la incidencia. */
   readonly incidentSelected = output<Incident>();

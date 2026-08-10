@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
 
@@ -18,7 +18,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    // `withComponentInputBinding` entrega los parámetros de ruta (`:id`)
+    // directamente como inputs del componente, sin inyectar ActivatedRoute.
+    provideRouter(routes, withComponentInputBinding()),
     { provide: LOCALE_ID, useValue: 'es' },
   ],
 };

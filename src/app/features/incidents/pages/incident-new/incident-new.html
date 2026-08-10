@@ -1,0 +1,11 @@
+<section class="incident-new">
+  <nav class="incident-new__breadcrumb" aria-label="Ruta de navegación">
+    <a routerLink="/incidents">Incidencias</a>
+    <span aria-hidden="true">/</span>
+    <span>Nueva</span>
+  </nav>
+
+  <h2 class="incident-new__title">Nueva incidencia</h2>
+
+  <app-incident-form (submitted)="onSubmitted($event)" />
+</section>

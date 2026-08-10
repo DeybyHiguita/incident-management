@@ -75,6 +75,12 @@
   </p>
 
   <footer class="incident-card__actions">
+    @if (detailLink(); as link) {
+      <a class="btn" [routerLink]="link">
+        Ver detalle<span class="visually-hidden">: {{ incident().title }}</span>
+      </a>
+    }
+
     <button
       type="button"
       class="btn incident-card__select"

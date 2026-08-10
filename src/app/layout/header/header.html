@@ -7,10 +7,34 @@
         <li>
           <a
             class="app-header__nav-link"
+            routerLink="/dashboard"
+            routerLinkActive="app-header__nav-link--active"
+            ariaCurrentWhenActive="page"
+          >
+            Panel
+          </a>
+        </li>
+        <li>
+          <!-- `exact: true` evita que «Incidencias» se marque como activa
+               estando en /incidents/new o en el detalle. -->
+          <a
+            class="app-header__nav-link"
             routerLink="/incidents"
             routerLinkActive="app-header__nav-link--active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            ariaCurrentWhenActive="page"
           >
             Incidencias
+          </a>
+        </li>
+        <li>
+          <a
+            class="app-header__nav-link"
+            routerLink="/incidents/new"
+            routerLinkActive="app-header__nav-link--active"
+            ariaCurrentWhenActive="page"
+          >
+            Nueva
           </a>
         </li>
       </ul>
