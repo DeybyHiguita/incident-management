@@ -11,6 +11,8 @@ export interface Incident {
   status: IncidentStatus;
   reporterId: string;
   assignedAgentId?: string;
+  /** Etiquetas libres para clasificar la incidencia. */
+  tags?: readonly string[];
   createdAt: string;
   updatedAt: string;
 }

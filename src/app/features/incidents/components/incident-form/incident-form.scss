@@ -74,6 +74,38 @@
     color: var(--color-text-muted);
   }
 
+  &__tags {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3);
+    border: var(--border-width) solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+
+    /* El botón de añadir no debe estirarse a todo el ancho del fieldset. */
+    > .btn {
+      align-self: flex-start;
+    }
+  }
+
+  &__tag {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+
+    > .incident-form__control {
+      flex: 1 1 10rem;
+      min-width: 0;
+    }
+
+    /* El mensaje de error salta a su propia línea, bajo el campo. */
+    > .incident-form__error {
+      flex-basis: 100%;
+    }
+  }
+
   &__actions {
     display: flex;
     flex-wrap: wrap;

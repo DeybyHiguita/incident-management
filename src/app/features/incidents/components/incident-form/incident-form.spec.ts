@@ -116,6 +116,7 @@ describe('IncidentForm', () => {
         description: VALID.description,
         category: VALID.category,
         priority: 'HIGH',
+        tags: [],
       });
     });
 
@@ -160,11 +161,12 @@ describe('IncidentForm', () => {
       submit();
 
       fillValidForm();
-      type_('#incident-title', 'Segunda incidencia de prueba');
+      // Ojo con el título: «prueba» es una palabra restringida (Día 12).
+      type_('#incident-title', 'Segunda incidencia registrada');
       submit();
 
       expect(emitted.length).toBe(2);
-      expect(emitted[1].title).toBe('Segunda incidencia de prueba');
+      expect(emitted[1].title).toBe('Segunda incidencia registrada');
     });
   });
 
@@ -178,6 +180,168 @@ describe('IncidentForm', () => {
       expect(emitted.length).toBe(0);
     });
   });
+
+  // --- Día 12: validadores personalizados y etiquetas dinámicas ------------
+
+  describe('validadores personalizados', () => {
+    it('rechaza un título formado solo por espacios', () => {
+      fillValidForm();
+      type_('#incident-title', '          ');
+      touch('#incident-title');
+
+      expect(errorFor('incident-title')?.textContent).toContain('solo espacios');
+      expect(submitButton().disabled).toBe(true);
+    });
+
+    it('rechaza un título con palabras restringidas', () => {
+      fillValidForm();
+      type_('#incident-title', 'Incidencia de prueba del sistema');
+      touch('#incident-title');
+
+      expect(errorFor('incident-title')?.textContent).toContain('No se permiten estas palabras');
+      expect(errorFor('incident-title')?.textContent).toContain('prueba');
+      expect(submitButton().disabled).toBe(true);
+    });
+
+    it('acepta un título que solo contiene la palabra restringida como subcadena', () => {
+      fillValidForm();
+      type_('#incident-title', 'Fallo en el contestador automático');
+
+      expect(errorFor('incident-title')).toBeNull();
+      expect(submitButton().disabled).toBe(false);
+    });
+
+    it('rechaza una descripción formada solo por espacios', () => {
+      fillValidForm();
+      type_('#incident-description', '               ');
+      touch('#incident-description');
+
+      expect(errorFor('incident-description')?.textContent).toContain('solo espacios');
+    });
+  });
+
+  describe('etiquetas dinámicas', () => {
+    it('empieza sin etiquetas', () => {
+      expect(tagInputs().length).toBe(0);
+      expect(fixture.nativeElement.textContent).toContain('Sin etiquetas');
+    });
+
+    it('añade y quita etiquetas en tiempo de ejecución', () => {
+      clickButton('Añadir etiqueta');
+      clickButton('Añadir etiqueta');
+      expect(tagInputs().length).toBe(2);
+
+      clickButton('Quitar');
+
+      expect(tagInputs().length).toBe(1);
+    });
+
+    it('quita la etiqueta correcta, no siempre la última', () => {
+      addTags(['red', 'servidor', 'urgente']);
+
+      // Se elimina la del medio.
+      tagRemoveButtons()[1].click();
+      fixture.detectChanges();
+
+      expect(tagValues()).toEqual(['red', 'urgente']);
+    });
+
+    it('no deja superar el máximo de etiquetas', () => {
+      for (let i = 0; i < 5; i++) {
+        clickButton('Añadir etiqueta');
+      }
+
+      expect(tagInputs().length).toBe(5);
+      expect(addTagButton().disabled).toBe(true);
+    });
+
+    it('rechaza etiquetas duplicadas sin distinguir mayúsculas', () => {
+      addTags(['Red', ' red ']);
+
+      submit();
+
+      expect(tagsError()?.textContent).toContain('etiquetas repetidas');
+      expect(emitted.length).toBe(0);
+    });
+
+    it('exige que una etiqueta añadida no quede vacía', () => {
+      fillValidForm();
+      clickButton('Añadir etiqueta');
+
+      submit();
+
+      expect(emitted.length).toBe(0);
+      expect(errorFor('incident-tag-0')?.textContent).toContain('obligatorio');
+    });
+
+    it('emite las etiquetas junto al resto del formulario', () => {
+      fillValidForm();
+      addTags(['red', 'servidor']);
+
+      submit();
+
+      expect(emitted[0].tags).toEqual(['red', 'servidor']);
+    });
+
+    it('recorta los espacios de cada etiqueta', () => {
+      fillValidForm();
+      addTags(['  red  ']);
+
+      submit();
+
+      expect(emitted[0].tags).toEqual(['red']);
+    });
+
+    it('emite un arreglo vacío si no se añadió ninguna', () => {
+      fillValidForm();
+
+      submit();
+
+      expect(emitted[0].tags).toEqual([]);
+    });
+
+    it('vacía las etiquetas al limpiar el formulario', () => {
+      fillValidForm();
+      addTags(['red', 'servidor']);
+
+      submit();
+
+      // `form.reset()` no vacía un FormArray por sí solo.
+      expect(tagInputs().length).toBe(0);
+    });
+  });
+
+  function tagInputs(): HTMLInputElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form__tag input'));
+  }
+
+  function tagValues(): string[] {
+    return tagInputs().map((input) => input.value);
+  }
+
+  function tagRemoveButtons(): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form__tag button'));
+  }
+
+  function addTagButton(): HTMLButtonElement {
+    return Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Añadir etiqueta',
+    )!;
+  }
+
+  function addTags(values: string[]): void {
+    for (const [index, value] of values.entries()) {
+      clickButton('Añadir etiqueta');
+      const input = tagInputs()[index];
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    }
+  }
+
+  function tagsError(): HTMLElement | null {
+    return fixture.nativeElement.querySelector('#incident-tags-error');
+  }
 
   // --- utilidades ----------------------------------------------------------
 

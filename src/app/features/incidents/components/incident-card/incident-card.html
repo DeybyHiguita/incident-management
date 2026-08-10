@@ -61,6 +61,14 @@
     </time>
   </div>
 
+  @if (incident().tags?.length) {
+    <ul class="incident-card__tags" aria-label="Etiquetas">
+      @for (tag of incident().tags; track tag) {
+        <li class="incident-card__tag">{{ tag }}</li>
+      }
+    </ul>
+  }
+
   <p class="incident-card__reference">
     <span class="incident-card__ref-id">{{ incident().id | uppercase }}</span>
     <span class="incident-card__category">{{ incident().category | titlecase }}</span>

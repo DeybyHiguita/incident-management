@@ -15,7 +15,7 @@
       [attr.aria-describedby]="showError('title') ? 'incident-title-error' : null"
     />
     @if (showError('title')) {
-      <p class="incident-form__error" id="incident-title-error">{{ errorMessage('title') }}</p>
+      <p class="incident-form__error" id="incident-title-error">{{ fieldError('title') }}</p>
     }
   </div>
 
@@ -34,7 +34,7 @@
     ></textarea>
     @if (showError('description')) {
       <p class="incident-form__error" id="incident-description-error">
-        {{ errorMessage('description') }}
+        {{ fieldError('description') }}
       </p>
     }
   </div>
@@ -55,7 +55,7 @@
       />
       @if (showError('category')) {
         <p class="incident-form__error" id="incident-category-error">
-          {{ errorMessage('category') }}
+          {{ fieldError('category') }}
         </p>
       }
     </div>
@@ -80,11 +80,65 @@
       </select>
       @if (showError('priority')) {
         <p class="incident-form__error" id="incident-priority-error">
-          {{ errorMessage('priority') }}
+          {{ fieldError('priority') }}
         </p>
       }
     </div>
   </div>
+
+  <!-- Colección dinámica: los controles se crean y destruyen en tiempo de
+       ejecución, y el FormArray mantiene el índice de cada uno. -->
+  <fieldset class="incident-form__tags" formArrayName="tags">
+    <legend class="incident-form__label">Etiquetas (opcional)</legend>
+
+    <!-- `track tag` sigue al propio FormControl, no a su posición: al
+         quitar una etiqueta intermedia, las demás conservan su vista y su
+         valor en lugar de desplazarse. -->
+    @for (tag of tags.controls; track tag) {
+      <div class="incident-form__tag">
+        <label class="visually-hidden" [attr.for]="'incident-tag-' + $index">
+          Etiqueta {{ $index + 1 }}
+        </label>
+        <input
+          class="incident-form__control"
+          type="text"
+          [id]="'incident-tag-' + $index"
+          [formControlName]="$index"
+          [attr.aria-invalid]="showTagError($index)"
+          [attr.aria-describedby]="showTagError($index) ? 'incident-tag-' + $index + '-error' : null"
+        />
+        <button
+          type="button"
+          class="btn btn--danger"
+          [attr.aria-label]="'Quitar la etiqueta ' + ($index + 1)"
+          (click)="removeTag($index)"
+        >
+          Quitar
+        </button>
+
+        @if (showTagError($index)) {
+          <p class="incident-form__error" [id]="'incident-tag-' + $index + '-error'">
+            {{ tagError($index) }}
+          </p>
+        }
+      </div>
+    } @empty {
+      <p class="incident-form__hint">Sin etiquetas. Puedes añadir hasta {{ maxTags }}.</p>
+    }
+
+    @if (showTagsError()) {
+      <p class="incident-form__error" id="incident-tags-error">{{ tagsErrorMessage() }}</p>
+    }
+
+    <button
+      type="button"
+      class="btn"
+      [disabled]="tags.length >= maxTags"
+      (click)="addTag()"
+    >
+      Añadir etiqueta
+    </button>
+  </fieldset>
 
   <p class="incident-form__hint">Los campos marcados con * son obligatorios.</p>
 
