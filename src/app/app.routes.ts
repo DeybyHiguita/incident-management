@@ -1,14 +1,11 @@
 import { Routes } from '@angular/router';
 
 /**
- * Rutas de la aplicación.
+ * Rutas raíz de la aplicación.
  *
- * Todas usan `loadComponent`, así que cada página viaja en su propio
- * fragmento y solo se descarga cuando se visita.
- *
- * El orden importa: Angular toma la **primera** coincidencia. Por eso
- * `incidents/new` va antes que `incidents/:id` —si no, `:id` capturaría la
- * palabra «new»— y el comodín `**` va el último.
+ * Solo conoce las **secciones**, no las pantallas: todo lo de incidencias
+ * se delega con `loadChildren` al archivo de rutas de esa funcionalidad.
+ * Añadir una pantalla de incidencias ya no obliga a tocar este archivo.
  */
 export const routes: Routes = [
   {
@@ -18,25 +15,10 @@ export const routes: Routes = [
       import('./features/dashboard/pages/dashboard/dashboard').then((m) => m.Dashboard),
   },
   {
+    // `loadChildren` no descarga nada de incidencias hasta que se visita
+    // alguna de sus rutas.
     path: 'incidents',
-    title: 'Incidencias · Gestión de Incidencias',
-    loadComponent: () =>
-      import('./features/incidents/pages/incident-list/incident-list').then((m) => m.IncidentList),
-  },
-  {
-    // Antes que `incidents/:id`: una ruta concreta gana a una con parámetro.
-    path: 'incidents/new',
-    title: 'Nueva incidencia · Gestión de Incidencias',
-    loadComponent: () =>
-      import('./features/incidents/pages/incident-new/incident-new').then((m) => m.IncidentNew),
-  },
-  {
-    path: 'incidents/:id',
-    title: 'Detalle de incidencia · Gestión de Incidencias',
-    loadComponent: () =>
-      import('./features/incidents/pages/incident-detail/incident-detail').then(
-        (m) => m.IncidentDetail,
-      ),
+    loadChildren: () => import('./features/incidents/incidents.routes').then((m) => m.INCIDENT_ROUTES),
   },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   {

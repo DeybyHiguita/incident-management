@@ -26,3 +26,11 @@ export interface Incident {
 export type IncidentDraft = Omit<Incident, 'id' | 'status' | 'createdAt' | 'updatedAt'> & {
   readonly status?: IncidentStatus;
 };
+
+/**
+ * Campos que se pueden modificar de una incidencia ya registrada.
+ *
+ * Quedan fuera `id` y `createdAt` —no cambian nunca— y `updatedAt`, que lo
+ * pone el servicio.
+ */
+export type IncidentChanges = Partial<Omit<Incident, 'id' | 'createdAt' | 'updatedAt'>>;

@@ -61,7 +61,13 @@
     color: var(--color-text-muted);
   }
 
-  /* El enlace de volver no debe ocupar todo el ancho. */
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* El enlace de volver del estado «no encontrada» no debe estirarse. */
   > .btn {
     align-self: flex-start;
   }

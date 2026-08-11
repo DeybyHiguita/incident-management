@@ -1,5 +1,7 @@
 <form class="incident-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-  <h3 class="incident-form__title">Registrar una incidencia</h3>
+  <h3 class="incident-form__title">
+    {{ initialValue() ? 'Editar la incidencia' : 'Registrar una incidencia' }}
+  </h3>
 
   <div class="incident-form__field">
     <label class="incident-form__label" for="incident-title">
@@ -147,7 +149,7 @@
          `novalidate` del <form> desactiva los mensajes del navegador para
          que los únicos visibles sean los nuestros. -->
     <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
-      Registrar incidencia
+      {{ submitLabel() }}
     </button>
     <button type="button" class="btn" (click)="resetForm()">Limpiar</button>
   </div>

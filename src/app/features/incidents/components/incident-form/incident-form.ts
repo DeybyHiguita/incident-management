@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -50,6 +58,16 @@ export class IncidentForm {
 
   protected readonly maxTags = MAX_TAGS;
 
+  /**
+   * Valores de partida. Con `null` (por defecto) el formulario es de alta;
+   * con datos, de edición. Es el único cambio que necesita el componente
+   * para servir a las dos pantallas.
+   */
+  readonly initialValue = input<IncidentFormValue | null>(null);
+
+  /** Texto del botón de envío, para que cada pantalla nombre su acción. */
+  readonly submitLabel = input('Registrar incidencia');
+
   /** Se emite solo cuando el formulario es válido. */
   readonly submitted = output<IncidentFormValue>();
 
@@ -85,6 +103,35 @@ export class IncidentForm {
 
   protected readonly submitAttempted = signal(false);
   protected readonly lastRegisteredTitle = signal<string | null>(null);
+
+  constructor() {
+    // Cuando llega un valor inicial, se vuelca en el formulario. Va en un
+    // effect porque el input puede resolverse después de crear el
+    // componente (por ejemplo, al cargar la incidencia a editar).
+    effect(() => {
+      const value = this.initialValue();
+
+      if (value) {
+        this.applyValue(value);
+      }
+    });
+  }
+
+  /** Rellena el formulario con unos valores dados, incluidas las etiquetas. */
+  private applyValue(value: IncidentFormValue): void {
+    this.form.patchValue({
+      title: value.title,
+      description: value.description,
+      category: value.category,
+      priority: value.priority,
+    });
+
+    this.tags.clear();
+    for (const tag of value.tags ?? []) {
+      this.addTag();
+      this.tags.at(this.tags.length - 1).setValue(tag);
+    }
+  }
 
   protected get tags(): FormArray<FormControl<string>> {
     return this.form.controls.tags;
@@ -148,8 +195,12 @@ export class IncidentForm {
       tags: tags.map((tag) => tag.trim()),
     });
 
-    this.lastRegisteredTitle.set(title.trim());
-    this.resetForm();
+    // Al editar, la pantalla navega fuera tras guardar: ni se limpia el
+    // formulario ni se anuncia un registro que no ha ocurrido.
+    if (!this.initialValue()) {
+      this.lastRegisteredTitle.set(title.trim());
+      this.resetForm();
+    }
   }
 
   protected resetForm(): void {

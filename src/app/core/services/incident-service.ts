@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { Incident, IncidentDraft } from '../models/incident.model';
+import { Incident, IncidentChanges, IncidentDraft } from '../models/incident.model';
 import { IncidentSearchCriteria } from '../models/incident-search-criteria.model';
 import { MOCK_INCIDENTS } from '../mocks/incidents.mock';
 
@@ -87,6 +87,36 @@ export class IncidentService {
     this.collection.update((current) => [...current, incident]);
 
     return incident;
+  }
+
+  /**
+   * Aplica cambios parciales a una incidencia y devuelve la versión nueva,
+   * o `undefined` si el identificador no existe.
+   *
+   * El `id` y la fecha de creación no se pueden tocar; `updatedAt` lo pone
+   * el servicio, igual que en `create()`.
+   */
+  update(id: string, changes: IncidentChanges): Incident | undefined {
+    const current = this.getById(id);
+
+    if (!current) {
+      return undefined;
+    }
+
+    // Objeto nuevo, no mutación: la señal solo notifica si cambia la referencia.
+    const updated: Incident = {
+      ...current,
+      ...changes,
+      id: current.id,
+      createdAt: current.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.collection.update((incidents) =>
+      incidents.map((incident) => (incident.id === id ? updated : incident)),
+    );
+
+    return updated;
   }
 
   /** Elimina por identificador. Devuelve `false` si no había nada que eliminar. */

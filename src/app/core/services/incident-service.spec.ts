@@ -110,6 +110,68 @@ describe('IncidentService', () => {
     });
   });
 
+  describe('actualización', () => {
+    it('aplica cambios parciales sin tocar el resto', () => {
+      const original = MOCK_INCIDENTS[0];
+
+      const updated = service.update(original.id, { title: 'Título corregido' })!;
+
+      expect(updated.title).toBe('Título corregido');
+      expect(updated.description).toBe(original.description);
+      expect(updated.category).toBe(original.category);
+    });
+
+    it('conserva id y createdAt aunque se intenten cambiar', () => {
+      const original = MOCK_INCIDENTS[0];
+
+      const updated = service.update(original.id, {
+        title: 'Otro título',
+        // @ts-expect-error IncidentChanges no admite estos campos: se
+        // comprueba que además se ignoran en tiempo de ejecución.
+        id: 'inc-999',
+        createdAt: '1999-01-01T00:00:00.000Z',
+      })!;
+
+      expect(updated.id).toBe(original.id);
+      expect(updated.createdAt).toBe(original.createdAt);
+    });
+
+    it('refresca updatedAt', () => {
+      const original = MOCK_INCIDENTS[0];
+
+      const updated = service.update(original.id, { title: 'Título corregido' })!;
+
+      expect(updated.updatedAt).not.toBe(original.updatedAt);
+      expect(Number.isNaN(Date.parse(updated.updatedAt))).toBe(false);
+    });
+
+    it('devuelve undefined si el identificador no existe', () => {
+      expect(service.update('no-existe', { title: 'x' })).toBeUndefined();
+    });
+
+    it('deja la incidencia consultable con los datos nuevos', () => {
+      service.update('inc-001', { priority: 'CRITICAL' });
+
+      expect(service.getById('inc-001')?.priority).toBe('CRITICAL');
+    });
+
+    it('recalcula los indicadores derivados', () => {
+      const criticalBefore = service.criticalCount();
+
+      service.update('inc-001', { priority: 'CRITICAL' });
+
+      expect(service.criticalCount()).toBe(criticalBefore + 1);
+    });
+
+    it('no muta los datos simulados originales', () => {
+      const snapshot = MOCK_INCIDENTS.map((incident) => ({ ...incident }));
+
+      service.update('inc-001', { title: 'Título corregido' });
+
+      expect(MOCK_INCIDENTS).toEqual(snapshot);
+    });
+  });
+
   describe('eliminación', () => {
     it('elimina la incidencia y lo confirma', () => {
       expect(service.remove('inc-001')).toBe(true);

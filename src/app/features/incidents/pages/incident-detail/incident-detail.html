@@ -42,7 +42,12 @@
       </ul>
     }
 
-    <a class="btn" routerLink="/incidents">Volver al listado</a>
+    <div class="detail__actions">
+      <a class="btn btn--primary" [routerLink]="['/incidents', incident.id, 'edit']">
+        Editar incidencia
+      </a>
+      <a class="btn" routerLink="/incidents">Volver al listado</a>
+    </div>
   </article>
 } @else {
   <!-- El id no existe: no es un error de ruta, es un recurso que no está. -->

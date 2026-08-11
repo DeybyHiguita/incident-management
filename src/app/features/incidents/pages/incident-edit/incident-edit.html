@@ -1,0 +1,25 @@
+@if (incident(); as incident) {
+  <section class="incident-edit">
+    <nav class="incident-edit__breadcrumb" aria-label="Ruta de navegación">
+      <a routerLink="/incidents">Incidencias</a>
+      <span aria-hidden="true">/</span>
+      <a [routerLink]="['/incidents', incident.id]">{{ incident.id }}</a>
+      <span aria-hidden="true">/</span>
+      <span>Editar</span>
+    </nav>
+
+    <h2 class="incident-edit__title">Editar incidencia</h2>
+
+    <app-incident-form
+      [initialValue]="initialValue()"
+      submitLabel="Guardar cambios"
+      (submitted)="onSubmitted($event)"
+    />
+  </section>
+} @else {
+  <section class="incident-edit">
+    <h2>Incidencia no encontrada</h2>
+    <p>No existe ninguna incidencia con el identificador {{ id() }}.</p>
+    <a class="btn" routerLink="/incidents">Volver al listado</a>
+  </section>
+}
