@@ -1,5 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { Dashboard } from './dashboard';
 import { IncidentService } from '../../../../core/services/incident-service';
@@ -11,18 +12,21 @@ describe('Dashboard', () => {
   let service: IncidentService;
 
   beforeEach(async () => {
+    prepareApi();
     await TestBed.configureTestingModule({
       imports: [Dashboard],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTestApi()],
     }).compileComponents();
+  });
 
-    service = TestBed.inject(IncidentService);
-    service.reset();
+  beforeEach(fakeAsync(() => {
+    // El servicio carga en su constructor: hay que dejar llegar la respuesta.
+    service = loadIncidents();
 
     fixture = TestBed.createComponent(Dashboard);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+  }));
 
   it('should create', () => {
     expect(component).toBeTruthy();
@@ -45,15 +49,16 @@ describe('Dashboard', () => {
     expect(links[0].getAttribute('href')).toBe(`/incidents/${critical[0].id}`);
   });
 
-  it('se actualiza solo cuando cambian los datos del servicio', () => {
+  it('se actualiza solo cuando cambian los datos del servicio', fakeAsync(() => {
     const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
 
-    service.remove(critical.id);
+    service.remove(critical.id).subscribe();
+    tick();
     fixture.detectChanges();
 
     expect(stat('Críticas')).toBe('0');
     expect(fixture.nativeElement.textContent).toContain('No hay incidencias críticas');
-  });
+  }));
 
   it('ofrece accesos directos a registrar y al listado', () => {
     const hrefs = Array.from<HTMLAnchorElement>(

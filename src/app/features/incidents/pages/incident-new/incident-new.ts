@@ -22,12 +22,17 @@ export class IncidentNew {
    * resultado de una acción. Se usa el id que devuelve el servicio, así que
    * la página no tiene que adivinar a dónde va.
    */
-  protected onSubmitted(value: IncidentFormValue): void {
-    const created = this.incidentService.create({
-      ...value,
-      reporterId: this.userService.currentUser().id,
-    });
+  protected readonly loading = this.incidentService.loading;
+  protected readonly error = this.incidentService.error;
 
-    this.router.navigate(['/incidents', created.id]);
+  protected onSubmitted(value: IncidentFormValue): void {
+    this.incidentService
+      .create({ ...value, reporterId: this.userService.currentUser().id })
+      // Solo se navega si el servidor confirmó: si la petición falla, el
+      // usuario se queda en el formulario con el mensaje de error.
+      .subscribe({
+        next: (created) => this.router.navigate(['/incidents', created.id]),
+        error: () => undefined,
+      });
   }
 }

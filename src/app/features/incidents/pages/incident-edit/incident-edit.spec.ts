@@ -1,5 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { IncidentEdit } from './incident-edit';
 import { IncidentService } from '../../../../core/services/incident-service';
@@ -12,20 +13,22 @@ describe('IncidentEdit', () => {
   let router: Router;
 
   beforeEach(async () => {
+    prepareApi();
     await TestBed.configureTestingModule({
       imports: [IncidentEdit],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTestApi()],
     }).compileComponents();
+  });
 
-    service = TestBed.inject(IncidentService);
-    service.reset();
+  beforeEach(fakeAsync(() => {
+    service = loadIncidents();
 
     router = TestBed.inject(Router);
     spyOn(router, 'navigate');
 
     fixture = TestBed.createComponent(IncidentEdit);
     component = fixture.componentInstance;
-  });
+  }));
 
   it('should create', () => {
     setId('inc-001');
@@ -48,16 +51,16 @@ describe('IncidentEdit', () => {
     expect(submitButton().textContent?.trim()).toBe('Guardar cambios');
   });
 
-  it('guarda los cambios en el servicio', () => {
+  it('guarda los cambios en el servicio', fakeAsync(() => {
     setId('inc-001');
 
     setValue('#incident-title', 'Título corregido tras revisión', 'input');
     submit();
 
     expect(service.getById('inc-001')?.title).toBe('Título corregido tras revisión');
-  });
+    }));
 
-  it('conserva el identificador y la fecha de creación', () => {
+  it('conserva el identificador y la fecha de creación', fakeAsync(() => {
     const original = MOCK_INCIDENTS[0];
     setId(original.id);
 
@@ -68,18 +71,18 @@ describe('IncidentEdit', () => {
     expect(updated.id).toBe(original.id);
     expect(updated.createdAt).toBe(original.createdAt);
     expect(updated.updatedAt).not.toBe(original.updatedAt);
-  });
+    }));
 
-  it('vuelve al detalle tras guardar', () => {
+  it('vuelve al detalle tras guardar', fakeAsync(() => {
     setId('inc-001');
 
     setValue('#incident-title', 'Título corregido tras revisión', 'input');
     submit();
 
     expect(router.navigate).toHaveBeenCalledWith(['/incidents', 'inc-001']);
-  });
+    }));
 
-  it('no guarda ni navega si el formulario queda inválido', () => {
+  it('no guarda ni navega si el formulario queda inválido', fakeAsync(() => {
     setId('inc-001');
 
     setValue('#incident-title', 'abc', 'input'); // por debajo del mínimo
@@ -87,7 +90,7 @@ describe('IncidentEdit', () => {
 
     expect(service.getById('inc-001')?.title).toBe(MOCK_INCIDENTS[0].title);
     expect(router.navigate).not.toHaveBeenCalled();
-  });
+    }));
 
   it('avisa cuando el identificador no existe', () => {
     setId('inc-999');
@@ -114,6 +117,7 @@ describe('IncidentEdit', () => {
 
   function submit(): void {
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    tick();
     fixture.detectChanges();
   }
 

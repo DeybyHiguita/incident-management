@@ -10,6 +10,17 @@
 
     <h2 class="incident-edit__title">Editar incidencia</h2>
 
+    @if (error(); as message) {
+      <p class="error-banner" role="alert">No se pudieron guardar los cambios: {{ message }}</p>
+    }
+
+    @if (loading()) {
+      <p class="loading" role="status">
+        <span class="loading__spinner" aria-hidden="true"></span>
+        Guardando…
+      </p>
+    }
+
     <app-incident-form
       [initialValue]="initialValue()"
       submitLabel="Guardar cambios"

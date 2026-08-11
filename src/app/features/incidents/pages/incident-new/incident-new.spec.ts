@@ -1,5 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { IncidentNew } from './incident-new';
 import { IncidentService } from '../../../../core/services/incident-service';
@@ -12,13 +13,15 @@ describe('IncidentNew', () => {
   let router: Router;
 
   beforeEach(async () => {
+    prepareApi();
     await TestBed.configureTestingModule({
       imports: [IncidentNew],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTestApi()],
     }).compileComponents();
+  });
 
-    service = TestBed.inject(IncidentService);
-    service.reset();
+  beforeEach(fakeAsync(() => {
+    service = loadIncidents();
 
     router = TestBed.inject(Router);
     spyOn(router, 'navigate');
@@ -26,7 +29,7 @@ describe('IncidentNew', () => {
     fixture = TestBed.createComponent(IncidentNew);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+  }));
 
   it('should create', () => {
     expect(component).toBeTruthy();
@@ -36,7 +39,7 @@ describe('IncidentNew', () => {
     expect(fixture.nativeElement.querySelector('app-incident-form')).toBeTruthy();
   });
 
-  it('registra la incidencia con el usuario de la sesión', () => {
+  it('registra la incidencia con el usuario de la sesión', fakeAsync(() => {
     const currentUser = TestBed.inject(UserService).currentUser();
     const before = service.getAll().length;
 
@@ -44,21 +47,21 @@ describe('IncidentNew', () => {
 
     expect(service.getAll().length).toBe(before + 1);
     expect(service.getAll().at(-1)!.reporterId).toBe(currentUser.id);
-  });
+  }));
 
-  it('navega al detalle de la incidencia recién creada', () => {
+  it('navega al detalle de la incidencia recién creada', fakeAsync(() => {
     submitValidForm();
 
     const created = service.getAll().at(-1)!;
     expect(router.navigate).toHaveBeenCalledWith(['/incidents', created.id]);
-  });
+  }));
 
-  it('no navega si el formulario es inválido', () => {
+  it('no navega si el formulario es inválido', fakeAsync(() => {
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
     fixture.detectChanges();
 
     expect(router.navigate).not.toHaveBeenCalled();
-  });
+  }));
 
   function submitValidForm(): void {
     setValue('#incident-title', 'Fuga en el aire acondicionado', 'input');
@@ -67,6 +70,7 @@ describe('IncidentNew', () => {
     setValue('#incident-priority', 'HIGH', 'change');
 
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    tick();
     fixture.detectChanges();
   }
 

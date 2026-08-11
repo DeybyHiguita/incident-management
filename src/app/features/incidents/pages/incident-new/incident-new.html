@@ -7,5 +7,16 @@
 
   <h2 class="incident-new__title">Nueva incidencia</h2>
 
+  @if (error(); as message) {
+    <p class="error-banner" role="alert">No se pudo registrar la incidencia: {{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="loading" role="status">
+      <span class="loading__spinner" aria-hidden="true"></span>
+      Guardando…
+    </p>
+  }
+
   <app-incident-form (submitted)="onSubmitted($event)" />
 </section>

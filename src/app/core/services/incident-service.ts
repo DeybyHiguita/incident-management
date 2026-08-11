@@ -1,61 +1,82 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, finalize, tap } from 'rxjs';
 import { Incident, IncidentChanges, IncidentDraft } from '../models/incident.model';
 import { IncidentSearchCriteria } from '../models/incident-search-criteria.model';
-import { MOCK_INCIDENTS } from '../mocks/incidents.mock';
+import { IncidentApi } from '../api/incident-api';
 
 /**
  * Fuente única de verdad de las incidencias.
  *
- * Es el **único** punto del sistema que sabe de dónde salen los datos. Hoy
- * vienen de una constante en memoria; el día que vengan de una API, cambia
- * este archivo y ningún componente se entera.
- *
- * Ver `docs/dia-09-responsabilidad-del-servicio.md`.
+ * Desde el Día 15 los datos vienen de la API, pero el reparto de
+ * responsabilidades no cambia: `IncidentApi` habla HTTP y este servicio
+ * sigue siendo el dueño del estado. Los componentes tampoco se enteran —
+ * siguen leyendo la misma señal que el Día 9.
  */
 @Injectable({
   providedIn: 'root',
 })
 export class IncidentService {
-  /**
-   * Colección interna. Privada y de escritura exclusiva del servicio: nadie
-   * de fuera puede reemplazarla ni modificarla.
-   */
-  private readonly collection = signal<readonly Incident[]>(MOCK_INCIDENTS);
+  private readonly api = inject(IncidentApi);
+
+  /** Colección interna. Privada y de escritura exclusiva del servicio. */
+  private readonly collection = signal<readonly Incident[]>([]);
 
   /**
-   * Vista reactiva de solo lectura. Los componentes leen de aquí y se
-   * actualizan solos, pero no disponen de `set` ni de `update`.
+   * Peticiones en vuelo. Es un contador y no un booleano para que dos
+   * operaciones simultáneas no se pisen: la primera en terminar dejaría el
+   * indicador apagado mientras la otra sigue.
    */
+  private readonly pendingRequests = signal(0);
+
+  private readonly lastError = signal<string | null>(null);
+
+  /** `true` mientras la colección aún no se ha cargado por primera vez. */
+  private readonly initialized = signal(false);
+
   readonly incidents = this.collection.asReadonly();
+  readonly error = this.lastError.asReadonly();
+  readonly loading = computed(() => this.pendingRequests() > 0);
+
+  /** Distingue «no hay incidencias» de «todavía no han llegado». */
+  readonly loaded = this.initialized.asReadonly();
 
   // --- Indicadores derivados -----------------------------------------------
-  //
-  // Son `computed`, no campos: se calculan a partir de la colección y se
-  // recalculan solos cuando cambia. Guardarlos en un `signal` aparte
-  // obligaría a acordarse de actualizarlos en cada alta y cada baja, que es
-  // exactamente el tipo de estado que se desincroniza.
 
-  /** Número total de incidencias registradas. */
   readonly totalCount = computed(() => this.collection().length);
 
-  /** Incidencias con prioridad crítica, sin importar su estado. */
   readonly criticalCount = computed(
     () => this.collection().filter((incident) => incident.priority === 'CRITICAL').length,
   );
 
-  /** Incidencias en estado `OPEN`, es decir, aún sin atender. */
   readonly openCount = computed(
     () => this.collection().filter((incident) => incident.status === 'OPEN').length,
   );
 
+  constructor() {
+    this.load();
+  }
+
   // --- Consulta ------------------------------------------------------------
 
-  /** Todas las incidencias, en un arreglo nuevo que el llamante puede tratar como suyo. */
+  /** Recarga la colección desde el servidor. */
+  load(): void {
+    this.request(this.api.getAll()).subscribe({
+      next: (incidents) => {
+        this.collection.set(incidents);
+        this.initialized.set(true);
+      },
+      // El error ya quedó registrado en `lastError`; aquí solo se evita
+      // que una petición fallida rompa la suscripción.
+      error: () => this.initialized.set(true),
+    });
+  }
+
+  /** Todas las incidencias ya cargadas, en un arreglo nuevo. */
   getAll(): readonly Incident[] {
     return [...this.collection()];
   }
 
-  /** Busca por identificador. `undefined` si no existe. */
+  /** Busca en la colección ya cargada. `undefined` si no está. */
   getById(id: string): Incident | undefined {
     return this.collection().find((incident) => incident.id === id);
   }
@@ -68,12 +89,12 @@ export class IncidentService {
   // --- Escritura -----------------------------------------------------------
 
   /**
-   * Registra una incidencia nueva y devuelve la versión ya completa.
+   * Registra una incidencia.
    *
-   * El servicio decide el `id`, las marcas de tiempo y el estado inicial:
-   * son reglas del dominio, no decisiones de quien rellena el formulario.
+   * El servicio sigue decidiendo lo que no le toca al formulario: el
+   * identificador, las marcas de tiempo y el estado inicial.
    */
-  create(draft: IncidentDraft): Incident {
+  create(draft: IncidentDraft): Observable<Incident> {
     const now = new Date().toISOString();
     const incident: Incident = {
       ...draft,
@@ -83,27 +104,20 @@ export class IncidentService {
       updatedAt: now,
     };
 
-    // Arreglo nuevo, nunca `push`: así la señal notifica el cambio.
-    this.collection.update((current) => [...current, incident]);
-
-    return incident;
+    return this.request(this.api.create(incident)).pipe(
+      // La colección se actualiza cuando el servidor confirma, no antes.
+      tap((created) => this.collection.update((current) => [...current, created])),
+    );
   }
 
-  /**
-   * Aplica cambios parciales a una incidencia y devuelve la versión nueva,
-   * o `undefined` si el identificador no existe.
-   *
-   * El `id` y la fecha de creación no se pueden tocar; `updatedAt` lo pone
-   * el servicio, igual que en `create()`.
-   */
-  update(id: string, changes: IncidentChanges): Incident | undefined {
+  /** Aplica cambios parciales a una incidencia ya registrada. */
+  update(id: string, changes: IncidentChanges): Observable<Incident> {
     const current = this.getById(id);
 
     if (!current) {
-      return undefined;
+      return this.request(this.api.getById(id)) as Observable<Incident>;
     }
 
-    // Objeto nuevo, no mutación: la señal solo notifica si cambia la referencia.
     const updated: Incident = {
       ...current,
       ...changes,
@@ -112,35 +126,46 @@ export class IncidentService {
       updatedAt: new Date().toISOString(),
     };
 
-    this.collection.update((incidents) =>
-      incidents.map((incident) => (incident.id === id ? updated : incident)),
+    return this.request(this.api.update(updated)).pipe(
+      tap((saved) =>
+        this.collection.update((incidents) =>
+          incidents.map((incident) => (incident.id === id ? saved : incident)),
+        ),
+      ),
     );
-
-    return updated;
   }
 
-  /** Elimina por identificador. Devuelve `false` si no había nada que eliminar. */
-  remove(id: string): boolean {
-    const existed = this.collection().some((incident) => incident.id === id);
-
-    if (existed) {
-      this.collection.update((current) => current.filter((incident) => incident.id !== id));
-    }
-
-    return existed;
+  /** Elimina una incidencia. */
+  remove(id: string): Observable<void> {
+    return this.request(this.api.remove(id)).pipe(
+      tap(() =>
+        this.collection.update((current) => current.filter((incident) => incident.id !== id)),
+      ),
+    );
   }
 
-  /** Vuelve al conjunto de datos inicial. */
-  reset(): void {
-    this.collection.set(MOCK_INCIDENTS);
-  }
-
-  /** `true` si la colección sigue siendo exactamente la inicial. */
-  isPristine(): boolean {
-    return this.collection() === MOCK_INCIDENTS;
+  /** Descarta el mensaje de error visible. */
+  clearError(): void {
+    this.lastError.set(null);
   }
 
   // --- Interno -------------------------------------------------------------
+
+  /**
+   * Envuelve una llamada a la API con la contabilidad de carga y errores,
+   * para no repetir lo mismo en cada método.
+   */
+  private request<T>(source: Observable<T>): Observable<T> {
+    this.pendingRequests.update((count) => count + 1);
+    this.lastError.set(null);
+
+    return source.pipe(
+      tap({
+        error: (error: Error) => this.lastError.set(error.message),
+      }),
+      finalize(() => this.pendingRequests.update((count) => count - 1)),
+    );
+  }
 
   /** Siguiente identificador correlativo (`inc-006`, `inc-007`, …). */
   private nextId(): string {

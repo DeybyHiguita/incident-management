@@ -35,8 +35,13 @@ export class IncidentEdit {
     };
   });
 
+  protected readonly loading = this.incidentService.loading;
+  protected readonly error = this.incidentService.error;
+
   protected onSubmitted(value: IncidentFormValue): void {
-    this.incidentService.update(this.id(), value);
-    this.router.navigate(['/incidents', this.id()]);
+    this.incidentService.update(this.id(), value).subscribe({
+      next: () => this.router.navigate(['/incidents', this.id()]),
+      error: () => undefined,
+    });
   }
 }

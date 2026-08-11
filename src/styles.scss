@@ -212,6 +212,49 @@ video {
 }
 
 /* -------------------------------------------------------------------------
+   Estados de carga y error
+   Los usan varias páginas, así que viven en el sistema de diseño.
+   ------------------------------------------------------------------------- */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+
+  &__spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.error-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-danger);
+  border-inline-start: 4px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background-color: #fef2f2;
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+/* -------------------------------------------------------------------------
    Indicadores (stat tiles)
    Viven aquí, y no en un componente, porque los usan dos páginas distintas
    (el listado y el panel) y los estilos de componente están encapsulados.

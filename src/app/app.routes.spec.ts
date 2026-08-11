@@ -4,7 +4,7 @@ import { Router, provideRouter, withComponentInputBinding } from '@angular/route
 
 import { routes } from './app.routes';
 import { INCIDENT_ROUTES } from './features/incidents/incidents.routes';
-import { IncidentService } from './core/services/incident-service';
+import { prepareApi, provideTestApi } from './testing/api-testing';
 import { IncidentNew } from './features/incidents/pages/incident-new/incident-new';
 import { IncidentEdit } from './features/incidents/pages/incident-edit/incident-edit';
 import { IncidentDetail } from './features/incidents/pages/incident-detail/incident-detail';
@@ -19,13 +19,13 @@ describe('rutas de la aplicación', () => {
   let location: Location;
 
   beforeEach(async () => {
+    prepareApi();
     TestBed.configureTestingModule({
-      providers: [provideRouter(routes, withComponentInputBinding())],
+      providers: [provideRouter(routes, withComponentInputBinding()), provideTestApi()],
     });
 
     router = TestBed.inject(Router);
     location = TestBed.inject(Location);
-    TestBed.inject(IncidentService).reset();
 
     await router.navigate(['/']);
   });

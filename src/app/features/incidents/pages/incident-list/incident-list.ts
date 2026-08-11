@@ -75,7 +75,9 @@ export class IncidentList {
     this.incidents().find((incident) => incident.id === this.selectedId()),
   );
 
-  protected readonly isRestoreDisabled = computed(() => this.incidentService.isPristine());
+  protected readonly loading = this.incidentService.loading;
+  protected readonly error = this.incidentService.error;
+  protected readonly loaded = this.incidentService.loaded;
 
   // --- Acciones ------------------------------------------------------------
 
@@ -102,10 +104,10 @@ export class IncidentList {
   }
 
   protected onDeleteRequested(incident: Incident): void {
-    this.incidentService.remove(incident.id);
+    this.incidentService.remove(incident.id).subscribe({ error: () => undefined });
   }
 
-  protected restoreIncidents(): void {
-    this.incidentService.reset();
+  protected reload(): void {
+    this.incidentService.load();
   }
 }

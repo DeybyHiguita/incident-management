@@ -1,5 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { IncidentDetail } from './incident-detail';
 import { IncidentService } from '../../../../core/services/incident-service';
@@ -10,16 +11,19 @@ describe('IncidentDetail', () => {
   let fixture: ComponentFixture<IncidentDetail>;
 
   beforeEach(async () => {
+    prepareApi();
     await TestBed.configureTestingModule({
       imports: [IncidentDetail],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTestApi()],
     }).compileComponents();
+  });
 
-    TestBed.inject(IncidentService).reset();
+  beforeEach(fakeAsync(() => {
+    loadIncidents();
 
     fixture = TestBed.createComponent(IncidentDetail);
     component = fixture.componentInstance;
-  });
+  }));
 
   it('should create', () => {
     setId('inc-001');
@@ -71,15 +75,16 @@ describe('IncidentDetail', () => {
     });
   });
 
-  it('reacciona si la incidencia se elimina mientras se está viendo', () => {
+  it('reacciona si la incidencia se elimina mientras se está viendo', fakeAsync(() => {
     setId('inc-001');
     expect(text()).toContain('No se puede iniciar sesión');
 
-    TestBed.inject(IncidentService).remove('inc-001');
+    TestBed.inject(IncidentService).remove('inc-001').subscribe();
+    tick();
     fixture.detectChanges();
 
     expect(text()).toContain('Incidencia no encontrada');
-  });
+  }));
 
   function setId(id: string): void {
     fixture.componentRef.setInput('id', id);

@@ -4,16 +4,27 @@
 
     <div class="incident-list__header-actions">
       <a class="btn btn--primary" routerLink="/incidents/new">Registrar incidencia</a>
-      <button
-        type="button"
-        class="btn"
-        [disabled]="isRestoreDisabled()"
-        (click)="restoreIncidents()"
-      >
-        Restaurar lista
+      <button type="button" class="btn" [disabled]="loading()" (click)="reload()">
+        {{ loading() ? 'Cargando…' : 'Recargar' }}
       </button>
     </div>
   </header>
+
+  <!-- Indicador de carga. `aria-live` lo anuncia sin robar el foco. -->
+  @if (loading()) {
+    <p class="loading" role="status">
+      <span class="loading__spinner" aria-hidden="true"></span>
+      Cargando incidencias…
+    </p>
+  }
+
+  <!-- `role="alert"` sí interrumpe: un fallo merece la atención inmediata. -->
+  @if (error(); as message) {
+    <p class="error-banner" role="alert">
+      {{ message }}
+      <button type="button" class="btn" (click)="reload()">Reintentar</button>
+    </p>
+  }
 
   <!-- Indicadores derivados: ninguno se guarda, todos son computed sobre la
        colección del servicio. -->
@@ -114,7 +125,9 @@
       </li>
     } @empty {
       <li class="incident-list__empty">
-        @if (hasActiveFilters()) {
+        @if (!loaded()) {
+          Cargando…
+        } @else if (hasActiveFilters()) {
           Ninguna incidencia coincide con los filtros aplicados.
         } @else {
           No hay incidencias registradas.

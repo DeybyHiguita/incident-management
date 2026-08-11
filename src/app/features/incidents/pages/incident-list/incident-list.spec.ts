@@ -1,5 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { IncidentList } from './incident-list';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
@@ -14,21 +15,23 @@ describe('IncidentList', () => {
   let service: IncidentService;
 
   beforeEach(async () => {
+    prepareApi();
     await TestBed.configureTestingModule({
       imports: [IncidentList],
       // El listado y las tarjetas usan routerLink desde el Día 13.
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTestApi()],
     }).compileComponents();
+  });
 
-    // El servicio es un singleton: se reinicia para que cada prueba parta
-    // del mismo estado conocido.
-    service = TestBed.inject(IncidentService);
-    service.reset();
+  beforeEach(fakeAsync(() => {
+    // El servicio carga desde la API en su constructor: se deja llegar la
+    // respuesta antes de renderizar.
+    service = loadIncidents();
 
     fixture = TestBed.createComponent(IncidentList);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+  }));
 
   it('should create', () => {
     expect(component).toBeTruthy();
@@ -38,59 +41,62 @@ describe('IncidentList', () => {
     expect(cards().length).toBe(MOCK_INCIDENTS.length);
   });
 
-  it('marca la tarjeta como seleccionada cuando el hijo emite el evento', () => {
+  it('marca la tarjeta como seleccionada cuando el hijo emite el evento', fakeAsync(() => {
     clickIn(cards()[1], 'Seleccionar');
 
     expect(text()).toContain(MOCK_INCIDENTS[1].title);
     expect(cards()[1].querySelector('.incident-card--selected')).toBeTruthy();
-  });
+  }));
 
-  it('elimina la incidencia del contenedor cuando el hijo lo solicita', () => {
+  it('elimina la incidencia del contenedor cuando el hijo lo solicita', fakeAsync(() => {
     const removed = MOCK_INCIDENTS[0];
 
     clickIn(cards()[0], 'Eliminar incidencia');
 
     expect(cards().length).toBe(MOCK_INCIDENTS.length - 1);
     expect(text()).not.toContain(removed.title);
-  });
+  }));
 
-  it('no muta la colección original al eliminar (inmutabilidad)', () => {
+  it('no muta la colección original al eliminar (inmutabilidad)', fakeAsync(() => {
     const snapshot = [...MOCK_INCIDENTS];
 
     clickIn(cards()[0], 'Eliminar incidencia');
 
     expect(MOCK_INCIDENTS).toEqual(snapshot);
-  });
+  }));
 
-  it('delega la eliminación en el servicio en vez de gestionar los datos', () => {
+  it('delega la eliminación en el servicio en vez de gestionar los datos', fakeAsync(() => {
     spyOn(service, 'remove').and.callThrough();
 
     clickIn(cards()[0], 'Eliminar incidencia');
 
     expect(service.remove).toHaveBeenCalledWith(MOCK_INCIDENTS[0].id);
-  });
+  }));
 
-  it('refleja los cambios que otro consumidor haga en el servicio', () => {
+  it('refleja los cambios que otro consumidor haga en el servicio', fakeAsync(() => {
     // Nadie tocó el componente: el estado vive en el servicio y la vista
     // se actualiza sola porque lee una señal.
-    service.remove(MOCK_INCIDENTS[0].id);
+    service.remove(MOCK_INCIDENTS[0].id).subscribe();
+    tick();
     fixture.detectChanges();
 
     expect(cards().length).toBe(MOCK_INCIDENTS.length - 1);
     expect(text()).not.toContain(MOCK_INCIDENTS[0].title);
-  });
+  }));
 
-  it('muestra el estado vacío al eliminar todas y permite restaurar', () => {
+  it('muestra el estado vacío al eliminar todas y permite restaurar', fakeAsync(() => {
     while (cards().length > 0) {
       clickIn(cards()[0], 'Eliminar incidencia');
     }
 
     expect(text()).toContain('No hay incidencias registradas.');
 
-    clickIn(fixture.nativeElement, 'Restaurar lista');
+    // Recargar ya no las devuelve: desde el Día 15 la eliminación llega al
+    // servidor, así que la lista sigue vacía tras volver a pedirla.
+    clickIn(fixture.nativeElement, 'Recargar');
 
-    expect(cards().length).toBe(MOCK_INCIDENTS.length);
-  });
+    expect(cards().length).toBe(0);
+  }));
 
   // --- Día 6: accesibilidad y diseño adaptable -----------------------------
 
@@ -115,7 +121,7 @@ describe('IncidentList', () => {
     }
   });
 
-  it('anuncia el cambio de selección en una región aria-live', () => {
+  it('anuncia el cambio de selección en una región aria-live', fakeAsync(() => {
     const live: HTMLElement = fixture.nativeElement.querySelector(
       '.incident-list__selection[aria-live="polite"]',
     );
@@ -125,7 +131,7 @@ describe('IncidentList', () => {
     clickIn(cards()[0], 'Seleccionar');
 
     expect(live.textContent).toContain(MOCK_INCIDENTS[0].title);
-  });
+  }));
 
   it(`no desborda horizontalmente a ${NARROW_VIEWPORT_PX}px de ancho`, () => {
     const host: HTMLElement = fixture.nativeElement;
@@ -142,14 +148,8 @@ describe('IncidentList', () => {
     }
   });
 
-  it('deshabilita el botón de restaurar cuando la lista está completa', () => {
-    const restore = findIn(fixture.nativeElement, 'Restaurar lista');
-
-    expect(restore.disabled).toBe(true);
-
-    clickIn(cards()[0], 'Eliminar incidencia');
-
-    expect(findIn(fixture.nativeElement, 'Restaurar lista').disabled).toBe(false);
+  it('el botón de recargar solo se deshabilita mientras hay una petición en curso', () => {
+    expect(findIn(fixture.nativeElement, 'Recargar').disabled).toBe(false);
   });
 
   // --- Día 10: signals, valores derivados y actualización reactiva ---------
@@ -165,16 +165,17 @@ describe('IncidentList', () => {
       );
     });
 
-    it('se actualizan solos al eliminar, sin tocar el componente', () => {
+    it('se actualizan solos al eliminar, sin tocar el componente', fakeAsync(() => {
       const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
       const criticalBefore = Number(stat('Críticas'));
 
-      service.remove(critical.id);
+      service.remove(critical.id).subscribe();
+      tick();
       fixture.detectChanges();
 
       expect(stat('Totales')).toBe(String(MOCK_INCIDENTS.length - 1));
       expect(stat('Críticas')).toBe(String(criticalBefore - 1));
-    });
+    }));
   });
 
   describe('búsqueda y filtros', () => {
@@ -233,7 +234,7 @@ describe('IncidentList', () => {
       expect(text()).not.toContain('No hay incidencias registradas.');
     });
 
-    it('limpia todos los filtros de una vez', () => {
+    it('limpia todos los filtros de una vez', fakeAsync(() => {
       type_('#search-term', 'impresora');
       select('#priority-filter', 'LOW');
       expect(cards().length).toBe(1);
@@ -242,7 +243,7 @@ describe('IncidentList', () => {
 
       expect(cards().length).toBe(MOCK_INCIDENTS.length);
       expect(input('#search-term').value).toBe('');
-    });
+    }));
 
     it('deshabilita el botón de limpiar cuando no hay filtros activos', () => {
       expect(findIn(fixture.nativeElement, 'Limpiar filtros').disabled).toBe(true);
@@ -252,16 +253,17 @@ describe('IncidentList', () => {
       expect(findIn(fixture.nativeElement, 'Limpiar filtros').disabled).toBe(false);
     });
 
-    it('el filtro sigue aplicándose cuando cambian los datos del servicio', () => {
+    it('el filtro sigue aplicándose cuando cambian los datos del servicio', fakeAsync(() => {
       select('#priority-filter', 'MEDIUM');
       const before = cards().length;
 
       const medium = MOCK_INCIDENTS.find((i) => i.priority === 'MEDIUM')!;
-      service.remove(medium.id);
+      service.remove(medium.id).subscribe();
+      tick();
       fixture.detectChanges();
 
       expect(cards().length).toBe(before - 1);
-    });
+    }));
   });
 
   function stat(label: string): string {
@@ -341,6 +343,8 @@ describe('IncidentList', () => {
 
   function clickIn(root: ParentNode, label: string): void {
     findIn(root, label).click();
+    // Las acciones que llaman a la API resuelven en el siguiente turno.
+    tick();
     fixture.detectChanges();
   }
 });

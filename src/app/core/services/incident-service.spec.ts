@@ -1,9 +1,11 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { IncidentService } from './incident-service';
 import { MOCK_INCIDENTS } from '../mocks/incidents.mock';
 import { Incident, IncidentDraft } from '../models/incident.model';
 import { IncidentSearchCriteria } from '../models/incident-search-criteria.model';
+import { failNextApiRequest } from '../api/fake-backend.interceptor';
+import { loadIncidents, prepareApi, provideTestApi } from '../../testing/api-testing';
 
 const DRAFT: IncidentDraft = {
   title: 'Fuga en el aire acondicionado',
@@ -17,35 +19,57 @@ describe('IncidentService', () => {
   let service: IncidentService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(IncidentService);
+    prepareApi();
+    TestBed.configureTestingModule({ providers: [provideTestApi()] });
   });
 
-  it('should be created', () => {
+  /** Crea el servicio y espera a su carga inicial. */
+  function start(): void {
+    service = loadIncidents();
+  }
+
+  it('should be created', fakeAsync(() => {
+    start();
     expect(service).toBeTruthy();
-  });
+  }));
 
-  it('se comparte como única instancia en toda la aplicación', () => {
-    // providedIn: 'root' — dos inyecciones devuelven el mismo objeto.
+  it('se comparte como única instancia en toda la aplicación', fakeAsync(() => {
+    start();
     expect(TestBed.inject(IncidentService)).toBe(service);
+  }));
+
+  describe('carga inicial', () => {
+    it('pide las incidencias al crearse', fakeAsync(() => {
+      start();
+
+      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length);
+      expect(service.loaded()).toBe(true);
+    }));
+
+    it('mientras carga marca loading y luego lo apaga', fakeAsync(() => {
+      const pending = TestBed.inject(IncidentService);
+      expect(pending.loading()).toBe(true);
+
+      tick();
+
+      expect(pending.loading()).toBe(false);
+    }));
+
+    it('no hay error tras una carga correcta', fakeAsync(() => {
+      start();
+      expect(service.error()).toBeNull();
+    }));
   });
 
   describe('consulta', () => {
-    it('arranca con los datos simulados', () => {
-      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length);
-    });
+    beforeEach(fakeAsync(() => start()));
 
     it('devuelve un arreglo nuevo, no la colección interna', () => {
-      const first = service.getAll();
-      const second = service.getAll();
-
-      expect(first).not.toBe(second);
-      expect(first).toEqual(second);
+      expect(service.getAll()).not.toBe(service.getAll());
     });
 
     it('modificar lo devuelto no altera el estado del servicio', () => {
-      const copy = service.getAll() as Incident[];
-      copy.length = 0;
+      (service.getAll() as Incident[]).length = 0;
 
       expect(service.getAll().length).toBe(MOCK_INCIDENTS.length);
     });
@@ -59,9 +83,7 @@ describe('IncidentService', () => {
     });
 
     it('filtra con los criterios de búsqueda del dominio', () => {
-      const criteria = new IncidentSearchCriteria('', 'IN_PROGRESS');
-
-      const result = service.search(criteria);
+      const result = service.search(new IncidentSearchCriteria('', 'IN_PROGRESS'));
 
       expect(result.length).toBeGreaterThan(0);
       expect(result.every((incident) => incident.status === 'IN_PROGRESS')).toBe(true);
@@ -69,222 +91,220 @@ describe('IncidentService', () => {
   });
 
   describe('creación', () => {
-    it('añade la incidencia y completa los datos que decide el dominio', () => {
-      const created = service.create(DRAFT);
+    beforeEach(fakeAsync(() => start()));
 
-      expect(created.id).toBe('inc-006');
-      expect(created.status).toBe('OPEN');
-      expect(created.createdAt).toBe(created.updatedAt);
-      expect(Number.isNaN(Date.parse(created.createdAt))).toBe(false);
-      expect(created.title).toBe(DRAFT.title);
-    });
+    it('añade la incidencia y completa lo que decide el dominio', fakeAsync(() => {
+      let created: Incident | undefined;
+      service.create(DRAFT).subscribe((incident) => (created = incident));
+      tick();
 
-    it('incrementa el total y la incidencia queda consultable', () => {
-      const created = service.create(DRAFT);
+      expect(created!.id).toBe('inc-006');
+      expect(created!.status).toBe('OPEN');
+      expect(created!.createdAt).toBe(created!.updatedAt);
+      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length + 1);
+    }));
+
+    it('la colección solo cambia cuando el servidor confirma', fakeAsync(() => {
+      service.create(DRAFT).subscribe();
+
+      // Aún sin respuesta: nada de optimismo prematuro.
+      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length);
+
+      tick();
 
       expect(service.getAll().length).toBe(MOCK_INCIDENTS.length + 1);
-      expect(service.getById(created.id)).toEqual(created);
-    });
+    }));
 
-    it('genera identificadores distintos en creaciones sucesivas', () => {
-      const first = service.create(DRAFT);
-      const second = service.create(DRAFT);
+    it('la incidencia persiste en el servidor', fakeAsync(() => {
+      service.create(DRAFT).subscribe();
+      tick();
 
-      expect(first.id).not.toBe(second.id);
-      expect(second.id).toBe('inc-007');
-    });
+      // Se recarga desde cero: si solo estuviera en memoria, desaparecería.
+      service.load();
+      tick();
 
-    it('respeta el estado indicado en el borrador si viene dado', () => {
-      const created = service.create({ ...DRAFT, status: 'IN_PROGRESS' });
+      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length + 1);
+    }));
 
-      expect(created.status).toBe('IN_PROGRESS');
-    });
+    it('genera identificadores distintos en creaciones sucesivas', fakeAsync(() => {
+      service.create(DRAFT).subscribe();
+      tick();
+      let second: Incident | undefined;
+      service.create(DRAFT).subscribe((incident) => (second = incident));
+      tick();
 
-    it('no muta los datos simulados originales', () => {
-      const snapshot = [...MOCK_INCIDENTS];
-
-      service.create(DRAFT);
-
-      expect(MOCK_INCIDENTS).toEqual(snapshot);
-      expect(MOCK_INCIDENTS.length).toBe(snapshot.length);
-    });
+      expect(second!.id).toBe('inc-007');
+    }));
   });
 
   describe('actualización', () => {
-    it('aplica cambios parciales sin tocar el resto', () => {
+    beforeEach(fakeAsync(() => start()));
+
+    it('aplica cambios parciales sin tocar el resto', fakeAsync(() => {
       const original = MOCK_INCIDENTS[0];
+      let updated: Incident | undefined;
 
-      const updated = service.update(original.id, { title: 'Título corregido' })!;
+      service.update(original.id, { title: 'Título corregido' }).subscribe((i) => (updated = i));
+      tick();
 
-      expect(updated.title).toBe('Título corregido');
-      expect(updated.description).toBe(original.description);
-      expect(updated.category).toBe(original.category);
-    });
+      expect(updated!.title).toBe('Título corregido');
+      expect(updated!.description).toBe(original.description);
+    }));
 
-    it('conserva id y createdAt aunque se intenten cambiar', () => {
+    it('conserva id y createdAt, y refresca updatedAt', fakeAsync(() => {
       const original = MOCK_INCIDENTS[0];
+      let updated: Incident | undefined;
 
-      const updated = service.update(original.id, {
-        title: 'Otro título',
-        // @ts-expect-error IncidentChanges no admite estos campos: se
-        // comprueba que además se ignoran en tiempo de ejecución.
-        id: 'inc-999',
-        createdAt: '1999-01-01T00:00:00.000Z',
-      })!;
+      service.update(original.id, { title: 'Título corregido' }).subscribe((i) => (updated = i));
+      tick();
 
-      expect(updated.id).toBe(original.id);
-      expect(updated.createdAt).toBe(original.createdAt);
-    });
+      expect(updated!.id).toBe(original.id);
+      expect(updated!.createdAt).toBe(original.createdAt);
+      expect(updated!.updatedAt).not.toBe(original.updatedAt);
+    }));
 
-    it('refresca updatedAt', () => {
-      const original = MOCK_INCIDENTS[0];
+    it('los cambios persisten en el servidor', fakeAsync(() => {
+      service.update('inc-001', { priority: 'CRITICAL' }).subscribe();
+      tick();
 
-      const updated = service.update(original.id, { title: 'Título corregido' })!;
-
-      expect(updated.updatedAt).not.toBe(original.updatedAt);
-      expect(Number.isNaN(Date.parse(updated.updatedAt))).toBe(false);
-    });
-
-    it('devuelve undefined si el identificador no existe', () => {
-      expect(service.update('no-existe', { title: 'x' })).toBeUndefined();
-    });
-
-    it('deja la incidencia consultable con los datos nuevos', () => {
-      service.update('inc-001', { priority: 'CRITICAL' });
+      service.load();
+      tick();
 
       expect(service.getById('inc-001')?.priority).toBe('CRITICAL');
-    });
+    }));
 
-    it('recalcula los indicadores derivados', () => {
-      const criticalBefore = service.criticalCount();
+    it('recalcula los indicadores derivados', fakeAsync(() => {
+      const before = service.criticalCount();
 
-      service.update('inc-001', { priority: 'CRITICAL' });
+      service.update('inc-001', { priority: 'CRITICAL' }).subscribe();
+      tick();
 
-      expect(service.criticalCount()).toBe(criticalBefore + 1);
-    });
-
-    it('no muta los datos simulados originales', () => {
-      const snapshot = MOCK_INCIDENTS.map((incident) => ({ ...incident }));
-
-      service.update('inc-001', { title: 'Título corregido' });
-
-      expect(MOCK_INCIDENTS).toEqual(snapshot);
-    });
+      expect(service.criticalCount()).toBe(before + 1);
+    }));
   });
 
   describe('eliminación', () => {
-    it('elimina la incidencia y lo confirma', () => {
-      expect(service.remove('inc-001')).toBe(true);
+    beforeEach(fakeAsync(() => start()));
+
+    it('elimina la incidencia', fakeAsync(() => {
+      service.remove('inc-001').subscribe();
+      tick();
 
       expect(service.getById('inc-001')).toBeUndefined();
       expect(service.getAll().length).toBe(MOCK_INCIDENTS.length - 1);
-    });
+    }));
 
-    it('devuelve false si no había nada que eliminar', () => {
-      expect(service.remove('no-existe')).toBe(false);
-      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length);
-    });
+    it('la eliminación persiste en el servidor', fakeAsync(() => {
+      service.remove('inc-001').subscribe();
+      tick();
 
-    it('no muta los datos simulados originales', () => {
-      const snapshot = [...MOCK_INCIDENTS];
+      service.load();
+      tick();
 
-      service.remove('inc-001');
+      expect(service.getById('inc-001')).toBeUndefined();
+    }));
 
-      expect(MOCK_INCIDENTS).toEqual(snapshot);
-    });
-  });
+    it('informa del error si la incidencia no existe', fakeAsync(() => {
+      let failed: Error | undefined;
+      service.remove('no-existe').subscribe({ error: (e) => (failed = e) });
+      tick();
 
-  describe('reinicio', () => {
-    it('vuelve al conjunto inicial', () => {
-      service.remove('inc-001');
-      service.create(DRAFT);
-      expect(service.isPristine()).toBe(false);
-
-      service.reset();
-
-      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length);
-      expect(service.isPristine()).toBe(true);
-    });
+      expect(failed?.message).toContain('No existe la incidencia');
+      expect(service.error()).toBeTruthy();
+    }));
   });
 
   describe('indicadores derivados', () => {
-    it('cuenta el total de incidencias', () => {
-      expect(service.totalCount()).toBe(MOCK_INCIDENTS.length);
-    });
+    beforeEach(fakeAsync(() => start()));
 
-    it('cuenta las incidencias críticas', () => {
-      const expected = MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length;
-
-      expect(service.criticalCount()).toBe(expected);
-    });
-
-    it('cuenta las incidencias abiertas', () => {
-      const expected = MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length;
-
-      expect(service.openCount()).toBe(expected);
-    });
-
-    it('se recalculan solos al crear', () => {
-      const before = service.totalCount();
-
-      service.create({ ...DRAFT, priority: 'CRITICAL' });
-
-      expect(service.totalCount()).toBe(before + 1);
-      expect(service.criticalCount()).toBe(
-        MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length + 1,
-      );
-      // El borrador no trae estado, así que nace OPEN.
-      expect(service.openCount()).toBe(
-        MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length + 1,
-      );
-    });
-
-    it('se recalculan solos al eliminar', () => {
-      const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
-
-      service.remove(critical.id);
-
-      expect(service.totalCount()).toBe(MOCK_INCIDENTS.length - 1);
-      expect(service.criticalCount()).toBe(
-        MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length - 1,
-      );
-    });
-
-    it('vuelven a su valor inicial tras reiniciar', () => {
-      service.remove('inc-001');
-      service.create(DRAFT);
-
-      service.reset();
-
+    it('cuentan el total, las críticas y las abiertas', () => {
       expect(service.totalCount()).toBe(MOCK_INCIDENTS.length);
       expect(service.criticalCount()).toBe(
         MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length,
       );
-      expect(service.openCount()).toBe(
-        MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length,
-      );
+      expect(service.openCount()).toBe(MOCK_INCIDENTS.filter((i) => i.status === 'OPEN').length);
     });
 
-    it('son de solo lectura: no se pueden escribir', () => {
+    it('se recalculan solos al eliminar', fakeAsync(() => {
+      const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
+
+      service.remove(critical.id).subscribe();
+      tick();
+
+      expect(service.criticalCount()).toBe(
+        MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length - 1,
+      );
+    }));
+
+    it('son de solo lectura', () => {
       expect('set' in service.totalCount).toBe(false);
       expect('update' in service.totalCount).toBe(false);
     });
   });
 
+  describe('errores', () => {
+    it('registra el mensaje cuando la carga inicial falla', fakeAsync(() => {
+      failNextApiRequest();
+      service = TestBed.inject(IncidentService);
+      tick();
+
+      expect(service.error()).toBe('El servidor no pudo procesar la solicitud.');
+      expect(service.getAll().length).toBe(0);
+      // Se da por inicializado igualmente: no está cargando, simplemente falló.
+      expect(service.loaded()).toBe(true);
+      expect(service.loading()).toBe(false);
+    }));
+
+    it('el error se puede descartar', fakeAsync(() => {
+      failNextApiRequest();
+      service = TestBed.inject(IncidentService);
+      tick();
+      expect(service.error()).toBeTruthy();
+
+      service.clearError();
+
+      expect(service.error()).toBeNull();
+    }));
+
+    it('una petición correcta posterior limpia el error', fakeAsync(() => {
+      failNextApiRequest();
+      service = TestBed.inject(IncidentService);
+      tick();
+      expect(service.error()).toBeTruthy();
+
+      service.load();
+      tick();
+
+      expect(service.error()).toBeNull();
+      expect(service.getAll().length).toBe(MOCK_INCIDENTS.length);
+    }));
+
+    it('apaga el indicador de carga aunque la petición falle', fakeAsync(() => {
+      failNextApiRequest();
+      service = TestBed.inject(IncidentService);
+      tick();
+
+      expect(service.loading()).toBe(false);
+    }));
+  });
+
   describe('reactividad', () => {
-    it('la señal expuesta refleja los cambios', () => {
-      const before = service.incidents().length;
-
-      service.create(DRAFT);
-
-      expect(service.incidents().length).toBe(before + 1);
-    });
+    beforeEach(fakeAsync(() => start()));
 
     it('la señal expuesta es de solo lectura', () => {
-      // `asReadonly()` no expone `set` ni `update`: el estado solo cambia
-      // llamando a los métodos del servicio.
       expect('set' in service.incidents).toBe(false);
       expect('update' in service.incidents).toBe(false);
     });
+
+    it('no muta los datos simulados originales', fakeAsync(() => {
+      const snapshot = MOCK_INCIDENTS.map((incident) => ({ ...incident }));
+
+      service.create(DRAFT).subscribe();
+      tick();
+      service.remove('inc-001').subscribe();
+      tick();
+
+      expect(MOCK_INCIDENTS).toEqual(snapshot);
+    }));
   });
 });
