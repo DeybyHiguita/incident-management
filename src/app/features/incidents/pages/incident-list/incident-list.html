@@ -7,14 +7,17 @@
       <button type="button" class="btn" [disabled]="loading()" (click)="reload()">
         {{ loading() ? 'Cargando…' : 'Recargar' }}
       </button>
-      <button
-        type="button"
-        class="btn"
-        [attr.aria-pressed]="autoRefresh()"
-        (click)="toggleAutoRefresh()"
-      >
-        Refresco automático: {{ autoRefresh() ? 'activado' : 'desactivado' }}
-      </button>
+      <!-- Casilla nativa en vez de un botón: es una preferencia que se queda
+           activada, y el navegador ya aporta el estado accesible. -->
+      <label class="incident-list-auto-refresh" for="auto-refresh">
+        <input
+          type="checkbox"
+          id="auto-refresh"
+          [checked]="autoRefresh()"
+          (change)="toggleAutoRefresh()"
+        />
+        Refresco automático
+      </label>
     </div>
   </header>
 

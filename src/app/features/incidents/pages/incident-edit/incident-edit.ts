@@ -51,4 +51,9 @@ export class IncidentEdit {
         error: () => undefined,
       });
   }
+
+  /** Al descartar una edición se vuelve al detalle, no al listado. */
+  protected onCancelled(): void {
+    this.router.navigate(['/incidents', this.id()]);
+  }
 }

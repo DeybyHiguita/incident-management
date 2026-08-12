@@ -24,6 +24,47 @@
     font-size: var(--font-size-lg);
   }
 
+  /* Fila de acciones de la cabecera. Sin esto los botones quedaban pegados,
+     porque `.btn` es inline-flex y no aporta separación por sí mismo. */
+  &-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+
+    /* En móvil ocupan el ancho completo y se reparten. */
+    width: 100%;
+
+    @include bp.respond-from(sm) {
+      width: auto;
+      justify-content: flex-end;
+    }
+  }
+
+  /* El interruptor va después de un separador visual: es una preferencia,
+     no una acción como los dos botones anteriores. */
+  &-auto-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-inline-start: var(--space-3);
+    border-inline-start: var(--border-width) solid var(--color-border);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    /* No se parte en dos líneas entre la casilla y su texto. */
+    white-space: nowrap;
+
+    input {
+      /* Área de toque cómoda sin agrandar el texto. */
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      accent-color: var(--color-primary);
+      cursor: pointer;
+    }
+  }
+
   &-count {
     margin: 0;
     font-size: var(--font-size-sm);

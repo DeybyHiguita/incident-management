@@ -99,6 +99,48 @@ describe('IncidentEdit', () => {
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
 
+  it('cancelar vuelve al detalle sin guardar los cambios', fakeAsync(() => {
+    setId('inc-001');
+    setValue('#incident-title', 'Un título que no se debe guardar', 'input');
+
+    clickButton('Cancelar');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/incidents', 'inc-001']);
+    expect(service.getById('inc-001')?.title).toBe(MOCK_INCIDENTS[0].title);
+  }));
+
+  it('al editar la acción de reinicio se llama Restablecer', () => {
+    setId('inc-001');
+
+    const labels = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).map((button) => button.textContent?.trim());
+
+    expect(labels).toContain('Restablecer');
+    expect(labels).not.toContain('Limpiar');
+  });
+
+  it('restablecer devuelve los valores originales, no vacía el formulario', () => {
+    const original = MOCK_INCIDENTS[0];
+    setId(original.id);
+    setValue('#incident-title', 'Cambio a medias', 'input');
+
+    Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'))
+      .find((button) => button.textContent?.trim() === 'Restablecer')!
+      .click();
+    fixture.detectChanges();
+
+    expect(field('#incident-title').value).toBe(original.title);
+  });
+
+  function clickButton(label: string): void {
+    Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'))
+      .find((button) => button.textContent?.trim() === label)!
+      .click();
+    tick();
+    fixture.detectChanges();
+  }
+
   function setId(id: string): void {
     fixture.componentRef.setInput('id', id);
     fixture.detectChanges();

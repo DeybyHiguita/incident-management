@@ -71,6 +71,12 @@ export class IncidentForm {
   /** Se emite solo cuando el formulario es válido. */
   readonly submitted = output<IncidentFormValue>();
 
+  /**
+   * El usuario descarta la operación. El formulario no navega: avisa, y cada
+   * pantalla decide a dónde volver, igual que con `submitted`.
+   */
+  readonly cancelled = output<void>();
+
   protected readonly form: FormGroup<IncidentFormControls> = this.formBuilder.group({
     title: this.formBuilder.control('', {
       nonNullable: true,
@@ -203,11 +209,27 @@ export class IncidentForm {
     }
   }
 
+  /**
+   * Devuelve el formulario a su punto de partida.
+   *
+   * Al dar de alta eso es vaciarlo; al editar, volver a los valores
+   * originales de la incidencia — vaciar el formulario de edición borraría
+   * los datos que el usuario está corrigiendo.
+   */
   protected resetForm(): void {
     this.form.reset();
     // `reset()` no vacía un FormArray: hay que quitar los controles a mano.
     this.tags.clear();
     this.submitAttempted.set(false);
+
+    const initial = this.initialValue();
+    if (initial) {
+      this.applyValue(initial);
+    }
+  }
+
+  protected onCancel(): void {
+    this.cancelled.emit();
   }
 
   // --- Errores de campo ----------------------------------------------------

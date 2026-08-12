@@ -179,7 +179,53 @@ describe('IncidentForm', () => {
       expect(field('#incident-title').value).toBe('');
       expect(emitted.length).toBe(0);
     });
+
+    it('al dar de alta la acción se llama Limpiar', () => {
+      expect(clickableLabels()).toContain('Limpiar');
+      expect(clickableLabels()).not.toContain('Restablecer');
+    });
   });
+
+  describe('cancelar', () => {
+    it('ofrece un botón de cancelar', () => {
+      expect(clickableLabels()).toContain('Cancelar');
+    });
+
+    it('emite el evento sin enviar el formulario', () => {
+      let cancelledTimes = 0;
+      component.cancelled.subscribe(() => cancelledTimes++);
+      fillValidForm();
+
+      clickButton('Cancelar');
+
+      expect(cancelledTimes).toBe(1);
+      expect(emitted.length).toBe(0);
+    });
+
+    it('cancela también con el formulario inválido o a medias', () => {
+      let cancelledTimes = 0;
+      component.cancelled.subscribe(() => cancelledTimes++);
+      type_('#incident-title', 'abc');
+
+      clickButton('Cancelar');
+
+      expect(cancelledTimes).toBe(1);
+    });
+
+    it('no es de tipo submit: no dispara el envío', () => {
+      const cancel = Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('button'),
+      ).find((b) => b.textContent?.trim() === 'Cancelar')!;
+
+      expect(cancel.type).toBe('button');
+    });
+  });
+
+  function clickableLabels(): string[] {
+    return Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button')).map(
+      (button) => button.textContent?.trim() ?? '',
+    );
+  }
 
   // --- Día 12: validadores personalizados y etiquetas dinámicas ------------
 

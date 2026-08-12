@@ -377,7 +377,7 @@ describe('IncidentList', () => {
     it('recarga periódicamente mientras está activo', fakeAsync(() => {
       const spy = spyOn(service, 'load').and.callThrough();
 
-      clickIn(fixture.nativeElement, 'Refresco automático');
+      toggleAutoRefresh();
 
       tick(AUTO_REFRESH_MS);
       expect(spy).toHaveBeenCalledTimes(1);
@@ -386,15 +386,15 @@ describe('IncidentList', () => {
       expect(spy).toHaveBeenCalledTimes(2);
 
       // Se apaga para no dejar temporizadores pendientes.
-      clickIn(fixture.nativeElement, 'Refresco automático');
+      toggleAutoRefresh();
       finish();
     }));
 
     it('al apagarlo se cancela el temporizador, no solo se ignoran sus avisos', fakeAsync(() => {
-      clickIn(fixture.nativeElement, 'Refresco automático');
+      toggleAutoRefresh();
       tick(AUTO_REFRESH_MS);
 
-      clickIn(fixture.nativeElement, 'Refresco automático');
+      toggleAutoRefresh();
       const spy = spyOn(service, 'load').and.callThrough();
 
       tick(AUTO_REFRESH_MS * 3);
@@ -404,7 +404,7 @@ describe('IncidentList', () => {
     }));
 
     it('el temporizador muere con el componente', fakeAsync(() => {
-      clickIn(fixture.nativeElement, 'Refresco automático');
+      toggleAutoRefresh();
       const spy = spyOn(service, 'load').and.callThrough();
 
       fixture.destroy();
@@ -452,6 +452,22 @@ describe('IncidentList', () => {
     expect(service.getAll().length).toBe(before);
     setFakeBackendLatency(0);
   }));
+
+  it('el refresco automático es una casilla con etiqueta asociada', () => {
+    const checkbox: HTMLInputElement = fixture.nativeElement.querySelector('#auto-refresh');
+    const label = fixture.nativeElement.querySelector('label[for="auto-refresh"]');
+
+    expect(checkbox.type).toBe('checkbox');
+    expect(checkbox.checked).toBe(false);
+    expect(label.textContent.trim()).toBe('Refresco automático');
+  });
+
+  /** Activa o desactiva el refresco automático desde la casilla. */
+  function toggleAutoRefresh(): void {
+    const checkbox: HTMLInputElement = fixture.nativeElement.querySelector('#auto-refresh');
+    checkbox.click();
+    fixture.detectChanges();
+  }
 
   /** Escribe un término y espera a que llegue la respuesta del servidor. */
   function search(term: string): void {

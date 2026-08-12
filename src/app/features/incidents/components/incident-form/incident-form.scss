@@ -109,7 +109,18 @@
   &-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: var(--border-width) solid var(--color-border-subtle);
+  }
+
+  /* Cancelar se empuja al extremo opuesto: separarlo de «Guardar» reduce el
+     riesgo de descartar el trabajo por un clic de más. */
+  &-cancel {
+    @include bp.respond-from(sm) {
+      margin-inline-start: auto;
+    }
   }
 
   &-success {

@@ -151,7 +151,16 @@
     <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
       {{ submitLabel() }}
     </button>
-    <button type="button" class="btn" (click)="resetForm()">Limpiar</button>
+
+    <button type="button" class="btn" (click)="resetForm()">
+      {{ initialValue() ? 'Restablecer' : 'Limpiar' }}
+    </button>
+
+    <!-- Cancelar se separa del resto: descarta la operación y sale, no es
+         una variante de guardar. -->
+    <button type="button" class="btn incident-form-cancel" (click)="onCancel()">
+      Cancelar
+    </button>
   </div>
 
   <!-- Confirmación del registro. `role="status"` lo anuncia sin interrumpir. -->

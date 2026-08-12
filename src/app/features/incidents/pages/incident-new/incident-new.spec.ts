@@ -63,6 +63,23 @@ describe('IncidentNew', () => {
     expect(router.navigate).not.toHaveBeenCalled();
   }));
 
+  it('cancelar vuelve al listado sin registrar nada', fakeAsync(() => {
+    const before = service.getAll().length;
+
+    clickButton('Cancelar');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/incidents']);
+    expect(service.getAll().length).toBe(before);
+  }));
+
+  function clickButton(label: string): void {
+    Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'))
+      .find((button) => button.textContent?.trim() === label)!
+      .click();
+    tick();
+    fixture.detectChanges();
+  }
+
   function submitValidForm(): void {
     setValue('#incident-title', 'Fuga en el aire acondicionado', 'input');
     setValue('#incident-description', 'Gotea sobre los equipos del rack.', 'input');

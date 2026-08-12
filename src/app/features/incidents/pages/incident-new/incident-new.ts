@@ -41,4 +41,9 @@ export class IncidentNew {
         error: () => undefined,
       });
   }
+
+  /** Al descartar un alta no hay nada que ver: se vuelve al listado. */
+  protected onCancelled(): void {
+    this.router.navigate(['/incidents']);
+  }
 }
