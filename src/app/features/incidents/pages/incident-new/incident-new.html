@@ -1,11 +1,11 @@
 <section class="incident-new">
-  <nav class="incident-new__breadcrumb" aria-label="Ruta de navegación">
+  <nav class="incident-new-breadcrumb" aria-label="Ruta de navegación">
     <a routerLink="/incidents">Incidencias</a>
     <span aria-hidden="true">/</span>
     <span>Nueva</span>
   </nav>
 
-  <h2 class="incident-new__title">Nueva incidencia</h2>
+  <h2 class="incident-new-title">Nueva incidencia</h2>
 
   @if (error(); as message) {
     <p class="error-banner" role="alert">No se pudo registrar la incidencia: {{ message }}</p>
@@ -13,7 +13,7 @@
 
   @if (loading()) {
     <p class="loading" role="status">
-      <span class="loading__spinner" aria-hidden="true"></span>
+      <span class="loading-spinner" aria-hidden="true"></span>
       Guardando…
     </p>
   }

@@ -42,7 +42,7 @@ describe('Dashboard', () => {
     const critical = MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL');
 
     const links: HTMLAnchorElement[] = Array.from(
-      fixture.nativeElement.querySelectorAll('.dashboard__critical-item a'),
+      fixture.nativeElement.querySelectorAll('.dashboard-critical-item a'),
     );
 
     expect(links.length).toBe(critical.length);
@@ -62,7 +62,7 @@ describe('Dashboard', () => {
 
   it('ofrece accesos directos a registrar y al listado', () => {
     const hrefs = Array.from<HTMLAnchorElement>(
-      fixture.nativeElement.querySelectorAll('.dashboard__actions a'),
+      fixture.nativeElement.querySelectorAll('.dashboard-actions a'),
     ).map((a) => a.getAttribute('href'));
 
     expect(hrefs).toContain('/incidents/new');
@@ -70,11 +70,11 @@ describe('Dashboard', () => {
   });
 
   function stat(label: string): string {
-    const items = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.stats__item'));
+    const items = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.stats-item'));
     const item = items.find(
-      (candidate) => candidate.querySelector('.stats__label')?.textContent?.trim() === label,
+      (candidate) => candidate.querySelector('.stats-label')?.textContent?.trim() === label,
     );
 
-    return item?.querySelector('.stats__value')?.textContent?.trim() ?? '';
+    return item?.querySelector('.stats-value')?.textContent?.trim() ?? '';
   }
 });

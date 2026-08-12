@@ -6,7 +6,7 @@
   padding: var(--space-6) var(--space-4);
   text-align: center;
 
-  &__code {
+  &-code {
     margin: 0;
     font-size: 4rem;
     font-weight: 700;
@@ -14,11 +14,11 @@
     color: var(--color-border);
   }
 
-  &__title {
+  &-title {
     margin: 0;
   }
 
-  &__message {
+  &-message {
     margin: 0;
     color: var(--color-text-muted);
     overflow-wrap: anywhere;
@@ -30,7 +30,7 @@
     }
   }
 
-  &__actions {
+  &-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;

@@ -312,7 +312,7 @@ describe('IncidentForm', () => {
   });
 
   function tagInputs(): HTMLInputElement[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form__tag input'));
+    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form-tag input'));
   }
 
   function tagValues(): string[] {
@@ -320,7 +320,7 @@ describe('IncidentForm', () => {
   }
 
   function tagRemoveButtons(): HTMLButtonElement[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form__tag button'));
+    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form-tag button'));
   }
 
   function addTagButton(): HTMLButtonElement {
@@ -393,7 +393,7 @@ describe('IncidentForm', () => {
   }
 
   function errors(): HTMLElement[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form__error'));
+    return Array.from(fixture.nativeElement.querySelectorAll('.incident-form-error'));
   }
 
   function errorFor(fieldId: string): HTMLElement | null {

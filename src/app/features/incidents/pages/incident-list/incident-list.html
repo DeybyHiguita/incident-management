@@ -1,8 +1,8 @@
 <section class="incident-list" aria-labelledby="incident-list-title">
-  <header class="incident-list__header">
-    <h2 class="incident-list__title" id="incident-list-title">Incidencias registradas</h2>
+  <header class="incident-list-header">
+    <h2 class="incident-list-title" id="incident-list-title">Incidencias registradas</h2>
 
-    <div class="incident-list__header-actions">
+    <div class="incident-list-header-actions">
       <a class="btn btn--primary" routerLink="/incidents/new">Registrar incidencia</a>
       <button type="button" class="btn" [disabled]="loading()" (click)="reload()">
         {{ loading() ? 'Cargando…' : 'Recargar' }}
@@ -21,7 +21,7 @@
   <!-- Indicador de carga. `aria-live` lo anuncia sin robar el foco. -->
   @if (loading()) {
     <p class="loading" role="status">
-      <span class="loading__spinner" aria-hidden="true"></span>
+      <span class="loading-spinner" aria-hidden="true"></span>
       Cargando incidencias…
     </p>
   }
@@ -37,25 +37,25 @@
   <!-- Indicadores derivados: ninguno se guarda, todos son computed sobre la
        colección del servicio. -->
   <ul class="stats" aria-label="Resumen de incidencias">
-    <li class="stats__item">
-      <span class="stats__value">{{ totalCount() }}</span>
-      <span class="stats__label">Totales</span>
+    <li class="stats-item">
+      <span class="stats-value">{{ totalCount() }}</span>
+      <span class="stats-label">Totales</span>
     </li>
-    <li class="stats__item stats__item--critical">
-      <span class="stats__value">{{ criticalCount() }}</span>
-      <span class="stats__label">Críticas</span>
+    <li class="stats-item stats-item--critical">
+      <span class="stats-value">{{ criticalCount() }}</span>
+      <span class="stats-label">Críticas</span>
     </li>
-    <li class="stats__item stats__item--open">
-      <span class="stats__value">{{ openCount() }}</span>
-      <span class="stats__label">Abiertas</span>
+    <li class="stats-item stats-item--open">
+      <span class="stats-value">{{ openCount() }}</span>
+      <span class="stats-label">Abiertas</span>
     </li>
   </ul>
 
   <div class="filters" role="search">
-    <div class="filters__field">
-      <label class="filters__label" for="search-term">Buscar</label>
+    <div class="filters-field">
+      <label class="filters-label" for="search-term">Buscar</label>
       <input
-        class="filters__control"
+        class="filters-control"
         id="search-term"
         type="search"
         placeholder="Título o descripción"
@@ -64,7 +64,7 @@
         aria-describedby="search-hint"
         (input)="onSearchTermChange($any($event.target).value)"
       />
-      <span class="filters__hint" id="search-hint" aria-live="polite">
+      <span class="filters-hint" id="search-hint" aria-live="polite">
         @if (searching()) {
           Buscando…
         } @else if (searchError(); as message) {
@@ -75,10 +75,10 @@
       </span>
     </div>
 
-    <div class="filters__field">
-      <label class="filters__label" for="status-filter">Estado</label>
+    <div class="filters-field">
+      <label class="filters-label" for="status-filter">Estado</label>
       <select
-        class="filters__control"
+        class="filters-control"
         id="status-filter"
         [value]="statusFilter()"
         (change)="onStatusFilterChange($any($event.target).value)"
@@ -91,10 +91,10 @@
       </select>
     </div>
 
-    <div class="filters__field">
-      <label class="filters__label" for="priority-filter">Prioridad</label>
+    <div class="filters-field">
+      <label class="filters-label" for="priority-filter">Prioridad</label>
       <select
-        class="filters__control"
+        class="filters-control"
         id="priority-filter"
         [value]="priorityFilter()"
         (change)="onPriorityFilterChange($any($event.target).value)"
@@ -112,12 +112,12 @@
     </button>
   </div>
 
-  <p class="incident-list__count" aria-live="polite">
+  <p class="incident-list-count" aria-live="polite">
     Mostrando {{ visibleCount() }} de {{ totalCount() }} incidencias.
   </p>
 
   <p
-    class="incident-list__selection"
+    class="incident-list-selection"
     aria-live="polite"
     [appIncidentHighlight]="selectedIncident()?.priority"
   >
@@ -125,13 +125,13 @@
       Incidencia seleccionada: <strong>{{ incident.title }}</strong>
       ({{ incident.id | uppercase }} · prioridad {{ incident.priority | incidentPriority }})
     } @else {
-      <span class="incident-list__selection--empty">Ninguna incidencia seleccionada.</span>
+      <span class="incident-list-selection--empty">Ninguna incidencia seleccionada.</span>
     }
   </p>
 
-  <ul class="incident-list__grid">
+  <ul class="incident-list-grid">
     @for (incident of visibleIncidents(); track incident.id) {
-      <li class="incident-list__item">
+      <li class="incident-list-item">
         <!-- La ruta la construye el contenedor: la tarjeta sigue sin saber
              nada del enrutador ni de las direcciones de la aplicación. -->
         <app-incident-card
@@ -143,7 +143,7 @@
         />
       </li>
     } @empty {
-      <li class="incident-list__empty">
+      <li class="incident-list-empty">
         @if (!loaded()) {
           Cargando…
         } @else if (hasActiveFilters()) {

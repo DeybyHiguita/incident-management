@@ -1,16 +1,16 @@
 @if (incident(); as incident) {
   <article class="detail" [appIncidentHighlight]="incident.priority">
-    <nav class="detail__breadcrumb" aria-label="Ruta de navegación">
+    <nav class="detail-breadcrumb" aria-label="Ruta de navegación">
       <a routerLink="/incidents">Incidencias</a>
       <span aria-hidden="true">/</span>
       <span>{{ incident.id | uppercase }}</span>
     </nav>
 
-    <h2 class="detail__title">{{ incident.title }}</h2>
+    <h2 class="detail-title">{{ incident.title }}</h2>
 
-    <p class="detail__description">{{ incident.description }}</p>
+    <p class="detail-description">{{ incident.description }}</p>
 
-    <dl class="detail__facts">
+    <dl class="detail-facts">
       <dt>Estado</dt>
       <dd>{{ incident.status }}</dd>
 
@@ -35,14 +35,14 @@
     </dl>
 
     @if (incident.tags?.length) {
-      <ul class="detail__tags" aria-label="Etiquetas">
+      <ul class="detail-tags" aria-label="Etiquetas">
         @for (tag of incident.tags; track tag) {
-          <li class="detail__tag">{{ tag }}</li>
+          <li class="detail-tag">{{ tag }}</li>
         }
       </ul>
     }
 
-    <div class="detail__actions">
+    <div class="detail-actions">
       <a class="btn btn--primary" [routerLink]="['/incidents', incident.id, 'edit']">
         Editar incidencia
       </a>

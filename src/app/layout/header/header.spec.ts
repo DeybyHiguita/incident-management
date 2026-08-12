@@ -31,7 +31,7 @@ describe('Header', () => {
   });
 
   it('describe con aria-expanded si el detalle de usuario está visible', () => {
-    const toggle: HTMLButtonElement = fixture.nativeElement.querySelector('.app-header__toggle');
+    const toggle: HTMLButtonElement = fixture.nativeElement.querySelector('.app-header-toggle');
 
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(toggle.getAttribute('aria-controls')).toBe('user-details');

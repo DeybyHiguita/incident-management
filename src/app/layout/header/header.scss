@@ -9,7 +9,7 @@
     padding: var(--space-4) var(--space-5);
   }
 
-  &__bar {
+  &-bar {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
@@ -25,7 +25,7 @@
     }
   }
 
-  &__title {
+  &-title {
     margin: 0;
     font-size: var(--font-size-lg);
 
@@ -33,13 +33,13 @@
     overflow-wrap: anywhere;
   }
 
-  &__nav {
+  &-nav {
     @include bp.respond-from(sm) {
       margin-inline-start: auto;
     }
   }
 
-  &__nav-list {
+  &-nav-list {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
@@ -48,7 +48,7 @@
     list-style: none;
   }
 
-  &__nav-link {
+  &-nav-link {
     display: inline-block;
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-sm);
@@ -66,7 +66,7 @@
     }
   }
 
-  &__user {
+  &-user {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -76,7 +76,7 @@
 
   /* Hereda `.btn` del sistema de diseño; aquí solo se invierte para el
      fondo oscuro de la barra. */
-  &__toggle {
+  &-toggle {
     border-color: var(--color-header-text);
     background-color: transparent;
     color: inherit;
@@ -87,7 +87,7 @@
     }
   }
 
-  &__details {
+  &-details {
     max-width: var(--layout-max-width);
     margin: var(--space-3) auto 0;
     font-size: var(--font-size-sm);

@@ -29,7 +29,7 @@ Consecuencias prácticas que aprovechamos hoy:
   tokens, el reset, el anillo de foco y las clases `.btn`.
 - Un componente **puede** usar clases globales en su template (`.btn`), pero
   no puede modificarlas desde su propio SCSS sin `::ng-deep` (que está
-  desaconsejado). Por eso `app-header__toggle` no reescribe `.btn`: la
+  desaconsejado). Por eso `app-header-toggle` no reescribe `.btn`: la
   acompaña.
 - `:host` selecciona el elemento del propio componente
   (`<app-incident-card>`), que por defecto es `display: inline`. En la
@@ -43,7 +43,7 @@ columna y reparte el espacio sobrante. Es la herramienta para agrupar cosas
 que van juntas en una línea.
 
 ```scss
-.incident-card__meta {
+.incident-card-meta {
   display: flex;
   flex-wrap: wrap;   // si no caben, bajan de línea en vez de desbordar
   gap: var(--space-3);
@@ -63,7 +63,7 @@ Modelo **bidimensional**: define filas y columnas a la vez. Es lo correcto
 para una galería de tarjetas.
 
 ```scss
-.incident-list__grid {
+.incident-list-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min-width)), 1fr));
   gap: var(--space-4);
@@ -92,7 +92,7 @@ base es el del caso más estrecho y las media queries **añaden** a partir de
 cierto ancho.
 
 ```scss
-.app-header__bar {
+.app-header-bar {
   flex-direction: column;             // móvil: apilado
 
   @include bp.respond-from(sm) {      // ≥640px: en fila
@@ -209,11 +209,11 @@ skip link (`tabindex="-1"`), pero no es un control, así que no dibuja anillo.
 ### Metodología de nombres CSS
 
 Convención para que el nombre de una clase diga qué es y dónde vive. Usamos
-**BEM**: `bloque__elemento--modificador`.
+**Nombres de clase**: `bloque-elemento--modificador`.
 
 ```
 .incident-card             → bloque (componente independiente)
-.incident-card__title      → elemento (parte del bloque, sin sentido fuera)
+.incident-card-title      → elemento (parte del bloque, sin sentido fuera)
 .incident-card--selected   → modificador (variante del bloque)
 ```
 
@@ -221,7 +221,7 @@ Con el anidamiento `&` de SCSS se escribe una sola vez el prefijo:
 
 ```scss
 .incident-card {
-  &__title { }
+  &-title { }
   &--selected { }
 }
 ```

@@ -125,24 +125,39 @@ Estados obligatorios en cualquier control:
 | `:focus-visible` | Anillo global de 2px — **nunca** se elimina |
 | `:disabled` | `cursor: not-allowed`, fondo y texto apagados |
 
-## 6. Nombres de clases (BEM)
+## 6. Nombres de clases
 
-`bloque__elemento--modificador`, siempre en minúsculas y con guiones.
+`bloque-elemento--modificador`, siempre en minúsculas y con guiones.
 
 ```scss
 .incident-card { }            // bloque
-.incident-card__title { }     // elemento
-.incident-card--selected { }  // modificador
+.incident-card-title { }      // elemento  (un guion)
+.incident-card--selected { }  // modificador (dos guiones)
 ```
 
 Con SCSS se escribe anidado con `&`:
 
 ```scss
 .incident-card {
-  &__title { }
+  &-title { }
   &--selected { }
 }
 ```
+
+Es BEM con una variación: el elemento se separa con **un guion** en lugar
+del doble guion bajo clásico (`bloque__elemento`). El modificador mantiene
+el doble guion, que es lo que sigue distinguiendo ambos casos de un vistazo:
+
+| Sufijo | Significa | Ejemplo |
+|---|---|---|
+| `-algo` | una parte del bloque | `.incident-card-title` |
+| `--algo` | una variante del bloque | `.incident-card--selected` |
+
+La contrapartida, para tenerla presente: un nombre de bloque con guiones
+(`incident-card`) y un elemento con guion (`-title`) se leen igual, así que
+la frontera entre bloque y elemento deja de ser evidente solo por el nombre.
+El doble guion bajo la marcaba sin ambigüedad. A cambio, los nombres quedan
+más cortos y homogéneos.
 
 No se anidan selectores por estructura HTML (`.a .b .c`): la especificidad
 crece y el estilo queda atado al marcado.

@@ -1,6 +1,6 @@
 @if (incident(); as incident) {
   <section class="incident-edit">
-    <nav class="incident-edit__breadcrumb" aria-label="Ruta de navegación">
+    <nav class="incident-edit-breadcrumb" aria-label="Ruta de navegación">
       <a routerLink="/incidents">Incidencias</a>
       <span aria-hidden="true">/</span>
       <a [routerLink]="['/incidents', incident.id]">{{ incident.id }}</a>
@@ -8,7 +8,7 @@
       <span>Editar</span>
     </nav>
 
-    <h2 class="incident-edit__title">Editar incidencia</h2>
+    <h2 class="incident-edit-title">Editar incidencia</h2>
 
     @if (error(); as message) {
       <p class="error-banner" role="alert">No se pudieron guardar los cambios: {{ message }}</p>
@@ -16,7 +16,7 @@
 
     @if (loading()) {
       <p class="loading" role="status">
-        <span class="loading__spinner" aria-hidden="true"></span>
+        <span class="loading-spinner" aria-hidden="true"></span>
         Guardando…
       </p>
     }

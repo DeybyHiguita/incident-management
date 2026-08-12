@@ -223,7 +223,7 @@ video {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 
-  &__spinner {
+  &-spinner {
     width: 1rem;
     height: 1rem;
     border: 2px solid var(--color-border);
@@ -267,7 +267,7 @@ video {
   padding: 0;
   list-style: none;
 
-  &__item {
+  &-item {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
@@ -286,14 +286,14 @@ video {
     }
   }
 
-  &__value {
+  &-value {
     font-size: 1.5rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
   }
 
-  &__label {
+  &-label {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
   }

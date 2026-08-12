@@ -2,37 +2,37 @@
   <h2 id="dashboard-title">Panel de control</h2>
 
   <ul class="stats" aria-label="Resumen de incidencias">
-    <li class="stats__item">
-      <span class="stats__value">{{ totalCount() }}</span>
-      <span class="stats__label">Totales</span>
+    <li class="stats-item">
+      <span class="stats-value">{{ totalCount() }}</span>
+      <span class="stats-label">Totales</span>
     </li>
-    <li class="stats__item stats__item--critical">
-      <span class="stats__value">{{ criticalCount() }}</span>
-      <span class="stats__label">Críticas</span>
+    <li class="stats-item stats-item--critical">
+      <span class="stats-value">{{ criticalCount() }}</span>
+      <span class="stats-label">Críticas</span>
     </li>
-    <li class="stats__item stats__item--open">
-      <span class="stats__value">{{ openCount() }}</span>
-      <span class="stats__label">Abiertas</span>
+    <li class="stats-item stats-item--open">
+      <span class="stats-value">{{ openCount() }}</span>
+      <span class="stats-label">Abiertas</span>
     </li>
   </ul>
 
-  <div class="dashboard__actions">
+  <div class="dashboard-actions">
     <a class="btn btn--primary" routerLink="/incidents/new">Registrar incidencia</a>
     <a class="btn" routerLink="/incidents">Ver todas las incidencias</a>
   </div>
 
-  <h3 class="dashboard__subtitle">Incidencias críticas</h3>
+  <h3 class="dashboard-subtitle">Incidencias críticas</h3>
 
-  <ul class="dashboard__critical">
+  <ul class="dashboard-critical">
     @for (incident of criticalIncidents(); track incident.id) {
-      <li class="dashboard__critical-item" [appIncidentHighlight]="incident.priority">
+      <li class="dashboard-critical-item" [appIncidentHighlight]="incident.priority">
         <a [routerLink]="['/incidents', incident.id]">{{ incident.title }}</a>
-        <span class="dashboard__critical-meta">
+        <span class="dashboard-critical-meta">
           {{ incident.priority | incidentPriority }} · {{ incident.category }}
         </span>
       </li>
     } @empty {
-      <li class="dashboard__critical-empty">No hay incidencias críticas ahora mismo.</li>
+      <li class="dashboard-critical-empty">No hay incidencias críticas ahora mismo.</li>
     }
   </ul>
 </section>

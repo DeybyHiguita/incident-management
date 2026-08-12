@@ -1,14 +1,14 @@
 <header class="app-header">
-  <div class="app-header__bar">
-    <h1 class="app-header__title">{{ systemTitle }}</h1>
+  <div class="app-header-bar">
+    <h1 class="app-header-title">{{ systemTitle }}</h1>
 
-    <nav class="app-header__nav" aria-label="Navegación principal">
-      <ul class="app-header__nav-list">
+    <nav class="app-header-nav" aria-label="Navegación principal">
+      <ul class="app-header-nav-list">
         <li>
           <a
-            class="app-header__nav-link"
+            class="app-header-nav-link"
             routerLink="/dashboard"
-            routerLinkActive="app-header__nav-link--active"
+            routerLinkActive="app-header-nav-link--active"
             ariaCurrentWhenActive="page"
           >
             Panel
@@ -18,9 +18,9 @@
           <!-- `exact: true` evita que «Incidencias» se marque como activa
                estando en /incidents/new o en el detalle. -->
           <a
-            class="app-header__nav-link"
+            class="app-header-nav-link"
             routerLink="/incidents"
-            routerLinkActive="app-header__nav-link--active"
+            routerLinkActive="app-header-nav-link--active"
             [routerLinkActiveOptions]="{ exact: true }"
             ariaCurrentWhenActive="page"
           >
@@ -29,9 +29,9 @@
         </li>
         <li>
           <a
-            class="app-header__nav-link"
+            class="app-header-nav-link"
             routerLink="/incidents/new"
-            routerLinkActive="app-header__nav-link--active"
+            routerLinkActive="app-header-nav-link--active"
             ariaCurrentWhenActive="page"
           >
             Nueva
@@ -41,11 +41,11 @@
     </nav>
 
     <!-- La misma directiva de foco que usa la tarjeta, en otro componente. -->
-    <div class="app-header__user" appFocusWithin>
-      <span class="app-header__user-name">{{ userName }}</span>
+    <div class="app-header-user" appFocusWithin>
+      <span class="app-header-user-name">{{ userName }}</span>
       <button
         type="button"
-        class="btn app-header__toggle"
+        class="btn app-header-toggle"
         id="user-details-toggle"
         [attr.aria-expanded]="showUserDetails()"
         aria-controls="user-details"
@@ -57,6 +57,6 @@
   </div>
 
   @if (showUserDetails()) {
-    <p class="app-header__details" id="user-details">Sesión simulada de: {{ userName }}</p>
+    <p class="app-header-details" id="user-details">Sesión simulada de: {{ userName }}</p>
   }
 </header>

@@ -1,14 +1,14 @@
 <form class="incident-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-  <h3 class="incident-form__title">
+  <h3 class="incident-form-title">
     {{ initialValue() ? 'Editar la incidencia' : 'Registrar una incidencia' }}
   </h3>
 
-  <div class="incident-form__field">
-    <label class="incident-form__label" for="incident-title">
+  <div class="incident-form-field">
+    <label class="incident-form-label" for="incident-title">
       Título <span aria-hidden="true">*</span>
     </label>
     <input
-      class="incident-form__control"
+      class="incident-form-control"
       id="incident-title"
       type="text"
       formControlName="title"
@@ -17,16 +17,16 @@
       [attr.aria-describedby]="showError('title') ? 'incident-title-error' : null"
     />
     @if (showError('title')) {
-      <p class="incident-form__error" id="incident-title-error">{{ fieldError('title') }}</p>
+      <p class="incident-form-error" id="incident-title-error">{{ fieldError('title') }}</p>
     }
   </div>
 
-  <div class="incident-form__field">
-    <label class="incident-form__label" for="incident-description">
+  <div class="incident-form-field">
+    <label class="incident-form-label" for="incident-description">
       Descripción <span aria-hidden="true">*</span>
     </label>
     <textarea
-      class="incident-form__control"
+      class="incident-form-control"
       id="incident-description"
       rows="3"
       formControlName="description"
@@ -35,19 +35,19 @@
       [attr.aria-describedby]="showError('description') ? 'incident-description-error' : null"
     ></textarea>
     @if (showError('description')) {
-      <p class="incident-form__error" id="incident-description-error">
+      <p class="incident-form-error" id="incident-description-error">
         {{ fieldError('description') }}
       </p>
     }
   </div>
 
-  <div class="incident-form__row">
-    <div class="incident-form__field">
-      <label class="incident-form__label" for="incident-category">
+  <div class="incident-form-row">
+    <div class="incident-form-field">
+      <label class="incident-form-label" for="incident-category">
         Categoría <span aria-hidden="true">*</span>
       </label>
       <input
-        class="incident-form__control"
+        class="incident-form-control"
         id="incident-category"
         type="text"
         formControlName="category"
@@ -56,18 +56,18 @@
         [attr.aria-describedby]="showError('category') ? 'incident-category-error' : null"
       />
       @if (showError('category')) {
-        <p class="incident-form__error" id="incident-category-error">
+        <p class="incident-form-error" id="incident-category-error">
           {{ fieldError('category') }}
         </p>
       }
     </div>
 
-    <div class="incident-form__field">
-      <label class="incident-form__label" for="incident-priority">
+    <div class="incident-form-field">
+      <label class="incident-form-label" for="incident-priority">
         Prioridad <span aria-hidden="true">*</span>
       </label>
       <select
-        class="incident-form__control"
+        class="incident-form-control"
         id="incident-priority"
         formControlName="priority"
         required
@@ -81,7 +81,7 @@
         <option value="CRITICAL">Crítica</option>
       </select>
       @if (showError('priority')) {
-        <p class="incident-form__error" id="incident-priority-error">
+        <p class="incident-form-error" id="incident-priority-error">
           {{ fieldError('priority') }}
         </p>
       }
@@ -90,19 +90,19 @@
 
   <!-- Colección dinámica: los controles se crean y destruyen en tiempo de
        ejecución, y el FormArray mantiene el índice de cada uno. -->
-  <fieldset class="incident-form__tags" formArrayName="tags">
-    <legend class="incident-form__label">Etiquetas (opcional)</legend>
+  <fieldset class="incident-form-tags" formArrayName="tags">
+    <legend class="incident-form-label">Etiquetas (opcional)</legend>
 
     <!-- `track tag` sigue al propio FormControl, no a su posición: al
          quitar una etiqueta intermedia, las demás conservan su vista y su
          valor en lugar de desplazarse. -->
     @for (tag of tags.controls; track tag) {
-      <div class="incident-form__tag">
+      <div class="incident-form-tag">
         <label class="visually-hidden" [attr.for]="'incident-tag-' + $index">
           Etiqueta {{ $index + 1 }}
         </label>
         <input
-          class="incident-form__control"
+          class="incident-form-control"
           type="text"
           [id]="'incident-tag-' + $index"
           [formControlName]="$index"
@@ -119,17 +119,17 @@
         </button>
 
         @if (showTagError($index)) {
-          <p class="incident-form__error" [id]="'incident-tag-' + $index + '-error'">
+          <p class="incident-form-error" [id]="'incident-tag-' + $index + '-error'">
             {{ tagError($index) }}
           </p>
         }
       </div>
     } @empty {
-      <p class="incident-form__hint">Sin etiquetas. Puedes añadir hasta {{ maxTags }}.</p>
+      <p class="incident-form-hint">Sin etiquetas. Puedes añadir hasta {{ maxTags }}.</p>
     }
 
     @if (showTagsError()) {
-      <p class="incident-form__error" id="incident-tags-error">{{ tagsErrorMessage() }}</p>
+      <p class="incident-form-error" id="incident-tags-error">{{ tagsErrorMessage() }}</p>
     }
 
     <button
@@ -142,9 +142,9 @@
     </button>
   </fieldset>
 
-  <p class="incident-form__hint">Los campos marcados con * son obligatorios.</p>
+  <p class="incident-form-hint">Los campos marcados con * son obligatorios.</p>
 
-  <div class="incident-form__actions">
+  <div class="incident-form-actions">
     <!-- El envío se bloquea mientras el formulario sea inválido. El
          `novalidate` del <form> desactiva los mensajes del navegador para
          que los únicos visibles sean los nuestros. -->
@@ -155,7 +155,7 @@
   </div>
 
   <!-- Confirmación del registro. `role="status"` lo anuncia sin interrumpir. -->
-  <p class="incident-form__success" role="status">
+  <p class="incident-form-success" role="status">
     @if (lastRegisteredTitle(); as title) {
       Incidencia «{{ title }}» registrada correctamente.
     }

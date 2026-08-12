@@ -111,7 +111,7 @@ describe('IncidentList', () => {
   // --- Día 6: accesibilidad y diseño adaptable -----------------------------
 
   it('agrupa las tarjetas en una lista semántica', () => {
-    const items = fixture.nativeElement.querySelectorAll('ul.incident-list__grid > li');
+    const items = fixture.nativeElement.querySelectorAll('ul.incident-list-grid > li');
 
     expect(items.length).toBe(MOCK_INCIDENTS.length);
   });
@@ -133,7 +133,7 @@ describe('IncidentList', () => {
 
   it('anuncia el cambio de selección en una región aria-live', fakeAsync(() => {
     const live: HTMLElement = fixture.nativeElement.querySelector(
-      '.incident-list__selection[aria-live="polite"]',
+      '.incident-list-selection[aria-live="polite"]',
     );
 
     expect(live.textContent).toContain('Ninguna incidencia seleccionada');
@@ -472,20 +472,20 @@ describe('IncidentList', () => {
   }
 
   function stat(label: string): string {
-    const items = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.stats__item'));
+    const items = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.stats-item'));
     const item = items.find((candidate) =>
-      candidate.querySelector('.stats__label')?.textContent?.trim() === label,
+      candidate.querySelector('.stats-label')?.textContent?.trim() === label,
     );
 
     if (!item) {
       throw new Error(`No se encontró el indicador "${label}"`);
     }
 
-    return item.querySelector('.stats__value')?.textContent?.trim() ?? '';
+    return item.querySelector('.stats-value')?.textContent?.trim() ?? '';
   }
 
   function counter(): string {
-    return fixture.nativeElement.querySelector('.incident-list__count')?.textContent ?? '';
+    return fixture.nativeElement.querySelector('.incident-list-count')?.textContent ?? '';
   }
 
   function input(selector: string): HTMLInputElement {

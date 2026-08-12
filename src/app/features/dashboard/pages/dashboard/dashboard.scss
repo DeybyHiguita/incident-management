@@ -7,18 +7,18 @@
     margin: 0;
   }
 
-  &__subtitle {
+  &-subtitle {
     margin: 0;
     font-size: var(--font-size-base);
   }
 
-  &__actions {
+  &-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
   }
 
-  &__critical {
+  &-critical {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
@@ -27,7 +27,7 @@
     list-style: none;
   }
 
-  &__critical-item {
+  &-critical-item {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -38,12 +38,12 @@
     background-color: var(--color-surface);
   }
 
-  &__critical-meta {
+  &-critical-meta {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
   }
 
-  &__critical-empty {
+  &-critical-empty {
     padding: var(--space-5);
     border: var(--border-width) dashed var(--color-border);
     border-radius: var(--radius-md);
