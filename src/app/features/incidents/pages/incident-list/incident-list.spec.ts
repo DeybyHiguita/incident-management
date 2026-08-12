@@ -361,6 +361,98 @@ describe('IncidentList', () => {
     }));
   });
 
+  // --- Día 17: suscripciones y ciclo de vida -------------------------------
+
+  describe('temporizador de refresco automático', () => {
+    const AUTO_REFRESH_MS = 30_000;
+
+    it('arranca apagado y sin ningún temporizador activo', fakeAsync(() => {
+      expect(component['autoRefresh']()).toBe(false);
+
+      // Si hubiera un interval corriendo, fakeAsync se quejaría al terminar.
+      tick(AUTO_REFRESH_MS * 2);
+      finish();
+    }));
+
+    it('recarga periódicamente mientras está activo', fakeAsync(() => {
+      const spy = spyOn(service, 'load').and.callThrough();
+
+      clickIn(fixture.nativeElement, 'Refresco automático');
+
+      tick(AUTO_REFRESH_MS);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      tick(AUTO_REFRESH_MS);
+      expect(spy).toHaveBeenCalledTimes(2);
+
+      // Se apaga para no dejar temporizadores pendientes.
+      clickIn(fixture.nativeElement, 'Refresco automático');
+      finish();
+    }));
+
+    it('al apagarlo se cancela el temporizador, no solo se ignoran sus avisos', fakeAsync(() => {
+      clickIn(fixture.nativeElement, 'Refresco automático');
+      tick(AUTO_REFRESH_MS);
+
+      clickIn(fixture.nativeElement, 'Refresco automático');
+      const spy = spyOn(service, 'load').and.callThrough();
+
+      tick(AUTO_REFRESH_MS * 3);
+
+      expect(spy).not.toHaveBeenCalled();
+      finish();
+    }));
+
+    it('el temporizador muere con el componente', fakeAsync(() => {
+      clickIn(fixture.nativeElement, 'Refresco automático');
+      const spy = spyOn(service, 'load').and.callThrough();
+
+      fixture.destroy();
+      tick(AUTO_REFRESH_MS * 3);
+
+      // Sin takeUntilDestroyed, esto seguiría recargando para siempre.
+      expect(spy).not.toHaveBeenCalled();
+    }));
+  });
+
+  describe('listener del navegador', () => {
+    it('recarga al recuperar la conexión', fakeAsync(() => {
+      const spy = spyOn(service, 'load').and.callThrough();
+
+      window.dispatchEvent(new Event('online'));
+      tick();
+
+      expect(spy).toHaveBeenCalled();
+      finish();
+    }));
+
+    it('se da de baja al destruir el componente', fakeAsync(() => {
+      fixture.destroy();
+      const spy = spyOn(service, 'load').and.callThrough();
+
+      window.dispatchEvent(new Event('online'));
+      tick();
+
+      // `addEventListener` no lo limpia Angular: sin el DestroyRef.onDestroy
+      // este listener sobreviviría a la página.
+      expect(spy).not.toHaveBeenCalled();
+    }));
+  });
+
+  it('una eliminación en vuelo no afecta al componente ya destruido', fakeAsync(() => {
+    setFakeBackendLatency(50);
+    const before = service.getAll().length;
+
+    findIn(cards()[0], 'Eliminar incidencia').click();
+    fixture.destroy();
+    tick(100);
+
+    // La suscripción se cortó con el componente: el servicio no se actualiza
+    // desde una vista que ya no existe.
+    expect(service.getAll().length).toBe(before);
+    setFakeBackendLatency(0);
+  }));
+
   /** Escribe un término y espera a que llegue la respuesta del servidor. */
   function search(term: string): void {
     type_('#search-term', term);

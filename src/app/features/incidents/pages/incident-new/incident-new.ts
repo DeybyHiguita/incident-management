@@ -1,4 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { IncidentService } from '../../../../core/services/incident-service';
 import { UserService } from '../../../../core/services/user-service';
@@ -14,6 +15,7 @@ export class IncidentNew {
   private readonly incidentService = inject(IncidentService);
   private readonly userService = inject(UserService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   /**
    * Registra la incidencia y lleva al usuario a su detalle.
@@ -28,6 +30,10 @@ export class IncidentNew {
   protected onSubmitted(value: IncidentFormValue): void {
     this.incidentService
       .create({ ...value, reporterId: this.userService.currentUser().id })
+      // Si el usuario se va de la página antes de que responda el servidor,
+      // la suscripción se corta: sin esto se navegaría al detalle desde un
+      // componente ya destruido, sacando al usuario de donde esté.
+      .pipe(takeUntilDestroyed(this.destroyRef))
       // Solo se navega si el servidor confirmó: si la petición falla, el
       // usuario se queda en el formulario con el mensaje de error.
       .subscribe({

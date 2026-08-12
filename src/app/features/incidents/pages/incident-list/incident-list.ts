@@ -1,12 +1,14 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { UpperCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
+  EMPTY,
   catchError,
   debounceTime,
   distinctUntilChanged,
   filter,
+  interval,
   map,
   of,
   switchMap,
@@ -25,6 +27,9 @@ const ANY = '';
 /** Espera antes de consultar al servidor, en milisegundos. */
 const SEARCH_DEBOUNCE_MS = 300;
 
+/** Periodo del refresco automático, en milisegundos. */
+const AUTO_REFRESH_MS = 30_000;
+
 @Component({
   selector: 'app-incident-list',
   imports: [IncidentCard, UpperCasePipe, IncidentPriorityPipe, IncidentHighlight, RouterLink],
@@ -34,6 +39,13 @@ const SEARCH_DEBOUNCE_MS = 300;
 export class IncidentList {
   private readonly incidentService = inject(IncidentService);
   private readonly incidentApi = inject(IncidentApi);
+
+  /**
+   * Referencia al ciclo de vida del componente. Sustituye a implementar
+   * `OnDestroy`: se puede pasar a `takeUntilDestroyed` desde cualquier
+   * método y registrar limpiezas con `onDestroy()`.
+   */
+  private readonly destroyRef = inject(DestroyRef);
 
   // --- Estado del dominio (vive en el servicio) ----------------------------
 
@@ -142,7 +154,54 @@ export class IncidentList {
     this.incidents().find((incident) => incident.id === this.selectedId()),
   );
 
+  // --- Ciclo de vida -------------------------------------------------------
+
+  /** Refresco automático. Apagado por defecto: lo activa el usuario. */
+  protected readonly autoRefresh = signal(false);
+
+  constructor() {
+    this.startAutoRefresh();
+    this.reloadWhenBackOnline();
+  }
+
+  /**
+   * Temporizador controlado.
+   *
+   * El `interval` **solo existe mientras el refresco está activo**: al
+   * apagarlo, `switchMap` cancela el temporizador en vez de dejarlo
+   * corriendo con las emisiones ignoradas. Y `takeUntilDestroyed` lo corta
+   * al destruirse el componente, sin necesidad de `ngOnDestroy`.
+   */
+  private startAutoRefresh(): void {
+    toObservable(this.autoRefresh)
+      .pipe(
+        switchMap((enabled) => (enabled ? interval(AUTO_REFRESH_MS) : EMPTY)),
+        // No se pisa a sí mismo si una recarga anterior sigue en vuelo.
+        filter(() => !this.incidentService.loading()),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.incidentService.load());
+  }
+
+  /**
+   * Listener del navegador: al recuperar la conexión, se recarga.
+   *
+   * `addEventListener` no lo limpia Angular, así que la baja se registra a
+   * mano en `DestroyRef.onDestroy`. Sin eso, el listener sobreviviría al
+   * componente y llamaría al servicio para siempre.
+   */
+  private reloadWhenBackOnline(): void {
+    const onOnline = () => this.incidentService.load();
+
+    window.addEventListener('online', onOnline);
+    this.destroyRef.onDestroy(() => window.removeEventListener('online', onOnline));
+  }
+
   // --- Acciones ------------------------------------------------------------
+
+  protected toggleAutoRefresh(): void {
+    this.autoRefresh.update((enabled) => !enabled);
+  }
 
   protected onSearchTermChange(value: string): void {
     this.searchTerm.set(value);
@@ -167,7 +226,11 @@ export class IncidentList {
   }
 
   protected onDeleteRequested(incident: Incident): void {
-    this.incidentService.remove(incident.id).subscribe({ error: () => undefined });
+    this.incidentService
+      .remove(incident.id)
+      // Fuera de un contexto de inyección hay que pasarle el DestroyRef.
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ error: () => undefined });
   }
 
   protected reload(): void {
