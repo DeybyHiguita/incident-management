@@ -52,8 +52,19 @@
         type="search"
         placeholder="Título o descripción"
         [value]="searchTerm()"
+        [attr.aria-busy]="searching()"
+        aria-describedby="search-hint"
         (input)="onSearchTermChange($any($event.target).value)"
       />
+      <span class="filters__hint" id="search-hint" aria-live="polite">
+        @if (searching()) {
+          Buscando…
+        } @else if (searchError(); as message) {
+          {{ message }}
+        } @else {
+          La búsqueda se consulta al servidor.
+        }
+      </span>
     </div>
 
     <div class="filters__field">

@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, throwError } from 'rxjs';
 import { Incident } from '../models/incident.model';
@@ -26,6 +26,20 @@ export class IncidentApi {
   /** `GET /api/incidents` */
   getAll(): Observable<Incident[]> {
     return this.http.get<Incident[]>(BASE_URL).pipe(catchError(toReadableError));
+  }
+
+  /**
+   * `GET /api/incidents?search=…`
+   *
+   * El filtrado lo hace el servidor. Con un término vacío devuelve todo, y
+   * es el mismo endpoint: no hace falta una ruta aparte.
+   */
+  search(term: string): Observable<Incident[]> {
+    const trimmed = term.trim();
+    // Un HttpParams vacío no añade la interrogación a la URL.
+    const params = trimmed ? new HttpParams().set('search', trimmed) : new HttpParams();
+
+    return this.http.get<Incident[]>(BASE_URL, { params }).pipe(catchError(toReadableError));
   }
 
   /** `GET /api/incidents/:id` */

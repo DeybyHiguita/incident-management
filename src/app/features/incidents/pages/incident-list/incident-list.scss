@@ -89,6 +89,13 @@
     font-weight: 600;
   }
 
+  &__hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    /* Reserva el hueco para que el texto no desplace los campos al cambiar. */
+    min-height: 1rem;
+  }
+
   &__control {
     min-height: 2.25rem;
     padding: var(--space-2) var(--space-3);

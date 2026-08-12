@@ -1,6 +1,14 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
+import { IncidentApi } from '../../../../core/api/incident-api';
+import {
+  failNextApiRequest,
+  setFakeBackendLatency,
+} from '../../../../core/api/fake-backend.interceptor';
+
+/** Debe coincidir con el debounce del componente. */
+const SEARCH_DEBOUNCE_MS = 300;
 
 import { IncidentList } from './incident-list';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
@@ -13,6 +21,7 @@ describe('IncidentList', () => {
   let fixture: ComponentFixture<IncidentList>;
   let component: IncidentList;
   let service: IncidentService;
+  let api: IncidentApi;
 
   beforeEach(async () => {
     prepareApi();
@@ -27,6 +36,7 @@ describe('IncidentList', () => {
     // El servicio carga desde la API en su constructor: se deja llegar la
     // respuesta antes de renderizar.
     service = loadIncidents();
+    api = TestBed.inject(IncidentApi);
 
     fixture = TestBed.createComponent(IncidentList);
     component = fixture.componentInstance;
@@ -178,93 +188,196 @@ describe('IncidentList', () => {
     }));
   });
 
-  describe('búsqueda y filtros', () => {
-    it('filtra por término de búsqueda', () => {
-      type_('#search-term', 'impresora');
+  describe('búsqueda reactiva (Día 16)', () => {
+    it('no consulta al servidor en cada tecla, solo al parar de escribir', fakeAsync(() => {
+      const spy = spyOn(api, 'search').and.callThrough();
+
+      type_('#search-term', 'i');
+      type_('#search-term', 'im');
+      type_('#search-term', 'imp');
+      // Aún dentro de la ventana de espera: ninguna petición.
+      expect(spy).not.toHaveBeenCalled();
+
+      tick(SEARCH_DEBOUNCE_MS);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith('imp');
+      finish();
+    }));
+
+    it('filtra por término contra el servidor', fakeAsync(() => {
+      search('impresora');
 
       expect(cards().length).toBe(1);
       expect(text()).toContain('Impresora de red desconectada');
-    });
+    }));
 
-    it('el término de búsqueda no distingue mayúsculas', () => {
-      type_('#search-term', 'IMPRESORA');
+    it('el término no distingue mayúsculas', fakeAsync(() => {
+      search('IMPRESORA');
 
       expect(cards().length).toBe(1);
-    });
+    }));
 
-    it('filtra por estado', () => {
+    it('evita solicitudes duplicadas cuando el término efectivo no cambia', fakeAsync(() => {
+      search('red');
+      const spy = spyOn(api, 'search').and.callThrough();
+
+      // Los espacios se recortan: para el servidor sigue siendo «red».
+      type_('#search-term', 'red ');
+      tick(SEARCH_DEBOUNCE_MS);
+      type_('#search-term', 'red');
+      tick(SEARCH_DEBOUNCE_MS);
+
+      expect(spy).not.toHaveBeenCalled();
+      finish();
+    }));
+
+    it('cancela la búsqueda anterior al cambiar el término', fakeAsync(() => {
+      // Con latencia, una respuesta vieja podría llegar después de una nueva.
+      setFakeBackendLatency(50);
+
+      type_('#search-term', 'impresora');
+      tick(SEARCH_DEBOUNCE_MS);
+      // Sin esperar la respuesta, se cambia el término.
+      type_('#search-term', 'servidor');
+      tick(SEARCH_DEBOUNCE_MS + 100);
+      fixture.detectChanges();
+
+      // Gana el último, no el más lento.
+      expect(cards().length).toBe(1);
+      expect(text()).toContain('Caída del servidor de facturación');
+      setFakeBackendLatency(0);
+      finish();
+    }));
+
+    it('muestra el estado de carga mientras busca', fakeAsync(() => {
+      setFakeBackendLatency(50);
+
+      type_('#search-term', 'servidor');
+      tick(SEARCH_DEBOUNCE_MS);
+      fixture.detectChanges();
+      expect(hint()).toContain('Buscando');
+
+      tick(100);
+      fixture.detectChanges();
+
+      expect(hint()).not.toContain('Buscando');
+      setFakeBackendLatency(0);
+      finish();
+    }));
+
+    it('informa del error sin romper el flujo: se puede seguir buscando', fakeAsync(() => {
+      failNextApiRequest();
+
+      search('servidor');
+      expect(hint()).toContain('El servidor no pudo procesar la solicitud.');
+
+      // El flujo sigue vivo: la búsqueda siguiente funciona.
+      search('impresora');
+
+      expect(hint()).not.toContain('El servidor no pudo');
+      expect(cards().length).toBe(1);
+    }));
+
+    it('un término sin coincidencias muestra el mensaje de filtros', fakeAsync(() => {
+      search('texto que no aparece en ninguna parte');
+
+      expect(cards().length).toBe(0);
+      expect(text()).toContain('Ninguna incidencia coincide con los filtros aplicados');
+    }));
+  });
+
+  describe('filtros locales', () => {
+    it('filtra por estado', fakeAsync(() => {
       select('#status-filter', 'IN_PROGRESS');
 
-      const expected = MOCK_INCIDENTS.filter((i) => i.status === 'IN_PROGRESS').length;
-      expect(cards().length).toBe(expected);
-    });
+      expect(cards().length).toBe(
+        MOCK_INCIDENTS.filter((i) => i.status === 'IN_PROGRESS').length,
+      );
+      finish();
+    }));
 
-    it('filtra por prioridad', () => {
+    it('filtra por prioridad', fakeAsync(() => {
       select('#priority-filter', 'CRITICAL');
 
       expect(cards().length).toBe(
         MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length,
       );
-    });
+      finish();
+    }));
 
-    it('combina los tres filtros a la vez', () => {
-      select('#status-filter', 'IN_PROGRESS');
-      select('#priority-filter', 'CRITICAL');
+    it('combina búsqueda remota y filtros locales', fakeAsync(() => {
+      search('servidor');
+      select('#priority-filter', 'LOW');
 
-      expect(cards().length).toBe(
-        MOCK_INCIDENTS.filter((i) => i.status === 'IN_PROGRESS' && i.priority === 'CRITICAL')
-          .length,
-      );
-    });
+      // «servidor» encuentra una crítica, así que el filtro LOW la descarta.
+      expect(cards().length).toBe(0);
+      finish();
+    }));
 
-    it('actualiza el contador de resultados sin cambiar el total', () => {
+    it('actualiza el contador de resultados sin cambiar el total', fakeAsync(() => {
       select('#priority-filter', 'CRITICAL');
 
       const critical = MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length;
       expect(counter()).toContain(`Mostrando ${critical} de ${MOCK_INCIDENTS.length}`);
-      // Los indicadores cuentan sobre toda la colección, no sobre lo filtrado.
       expect(stat('Totales')).toBe(String(MOCK_INCIDENTS.length));
-    });
-
-    it('muestra un mensaje propio cuando ningún resultado coincide', () => {
-      type_('#search-term', 'texto que no aparece en ninguna parte');
-
-      expect(cards().length).toBe(0);
-      expect(text()).toContain('Ninguna incidencia coincide con los filtros aplicados');
-      expect(text()).not.toContain('No hay incidencias registradas.');
-    });
+      finish();
+    }));
 
     it('limpia todos los filtros de una vez', fakeAsync(() => {
-      type_('#search-term', 'impresora');
+      search('impresora');
       select('#priority-filter', 'LOW');
       expect(cards().length).toBe(1);
 
-      clickIn(fixture.nativeElement, 'Limpiar filtros');
+      findIn(fixture.nativeElement, 'Limpiar filtros').click();
+      finish();
+      fixture.detectChanges();
 
       expect(cards().length).toBe(MOCK_INCIDENTS.length);
       expect(input('#search-term').value).toBe('');
     }));
 
-    it('deshabilita el botón de limpiar cuando no hay filtros activos', () => {
+    it('deshabilita el botón de limpiar cuando no hay filtros activos', fakeAsync(() => {
       expect(findIn(fixture.nativeElement, 'Limpiar filtros').disabled).toBe(true);
 
       type_('#search-term', 'a');
 
       expect(findIn(fixture.nativeElement, 'Limpiar filtros').disabled).toBe(false);
-    });
+      finish();
+    }));
 
-    it('el filtro sigue aplicándose cuando cambian los datos del servicio', fakeAsync(() => {
-      select('#priority-filter', 'MEDIUM');
-      const before = cards().length;
+    it('el resultado deja de mostrarse cuando la incidencia se elimina', fakeAsync(() => {
+      search('impresora');
+      expect(cards().length).toBe(1);
 
-      const medium = MOCK_INCIDENTS.find((i) => i.priority === 'MEDIUM')!;
-      service.remove(medium.id).subscribe();
+      const impresora = MOCK_INCIDENTS.find((i) => i.title.includes('Impresora'))!;
+      service.remove(impresora.id).subscribe();
       tick();
       fixture.detectChanges();
 
-      expect(cards().length).toBe(before - 1);
+      // Sin repetir la búsqueda: los resultados se cruzan con la colección viva.
+      expect(cards().length).toBe(0);
+      finish();
     }));
   });
+
+  /** Escribe un término y espera a que llegue la respuesta del servidor. */
+  function search(term: string): void {
+    type_('#search-term', term);
+    tick(SEARCH_DEBOUNCE_MS);
+    tick();
+    fixture.detectChanges();
+  }
+
+  /** Agota temporizadores pendientes para que fakeAsync no proteste. */
+  function finish(): void {
+    tick(SEARCH_DEBOUNCE_MS);
+    tick();
+  }
+
+  function hint(): string {
+    return fixture.nativeElement.querySelector('#search-hint')?.textContent ?? '';
+  }
 
   function stat(label: string): string {
     const items = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.stats__item'));

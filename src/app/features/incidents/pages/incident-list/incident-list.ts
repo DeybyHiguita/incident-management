@@ -1,12 +1,19 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { UpperCasePipe } from '@angular/common';
-import {
-  Incident,
-  IncidentPriority,
-  IncidentStatus,
-} from '../../../../core/models/incident.model';
-import { IncidentSearchCriteria } from '../../../../core/models/incident-search-criteria.model';
 import { RouterLink } from '@angular/router';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  map,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
+import { Incident, IncidentPriority, IncidentStatus } from '../../../../core/models/incident.model';
+import { IncidentApi } from '../../../../core/api/incident-api';
 import { IncidentService } from '../../../../core/services/incident-service';
 import { IncidentCard } from '../../components/incident-card/incident-card';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
@@ -14,6 +21,9 @@ import { IncidentHighlight } from '../../../../shared/directives/incident-highli
 
 /** Valor de los selectores cuando no se filtra por ese campo. */
 const ANY = '';
+
+/** Espera antes de consultar al servidor, en milisegundos. */
+const SEARCH_DEBOUNCE_MS = 300;
 
 @Component({
   selector: 'app-incident-list',
@@ -23,6 +33,7 @@ const ANY = '';
 })
 export class IncidentList {
   private readonly incidentService = inject(IncidentService);
+  private readonly incidentApi = inject(IncidentApi);
 
   // --- Estado del dominio (vive en el servicio) ----------------------------
 
@@ -30,36 +41,92 @@ export class IncidentList {
   protected readonly totalCount = this.incidentService.totalCount;
   protected readonly criticalCount = this.incidentService.criticalCount;
   protected readonly openCount = this.incidentService.openCount;
+  protected readonly loading = this.incidentService.loading;
+  protected readonly error = this.incidentService.error;
+  protected readonly loaded = this.incidentService.loaded;
 
   // --- Estado de esta vista (vive aquí) ------------------------------------
-  //
-  // Los filtros son de la pantalla, no del dominio: dos listados abiertos a
-  // la vez podrían filtrar distinto sobre las mismas incidencias.
 
   protected readonly searchTerm = signal('');
   protected readonly statusFilter = signal<IncidentStatus | typeof ANY>(ANY);
   protected readonly priorityFilter = signal<IncidentPriority | typeof ANY>(ANY);
   protected readonly selectedId = signal<string | null>(null);
 
-  // --- Valores derivados ---------------------------------------------------
-  //
-  // Nada de esto se guarda: todo se calcula. Al escribir en la caja de
-  // búsqueda solo cambia `searchTerm`, y la cascada se recalcula sola.
+  /** `true` mientras hay una búsqueda en vuelo. */
+  protected readonly searching = signal(false);
 
-  /** Criterios del Día 2, construidos a partir de los tres filtros. */
-  protected readonly criteria = computed(
-    () =>
-      new IncidentSearchCriteria(
-        this.searchTerm(),
-        this.statusFilter() || undefined,
-        this.priorityFilter() || undefined,
+  /** Mensaje si la búsqueda falla. No rompe el flujo: se sigue pudiendo buscar. */
+  protected readonly searchError = signal<string | null>(null);
+
+  // --- Búsqueda reactiva ---------------------------------------------------
+
+  /**
+   * Resultados que devuelve el servidor para el término actual.
+   *
+   * El flujo va de señal a señal pasando por RxJS: `toObservable` convierte
+   * la caja de texto en un flujo de valores, los operadores lo domestican y
+   * `toSignal` devuelve el resultado al mundo de las señales, sin ninguna
+   * suscripción manual que haya que cancelar después.
+   */
+  private readonly searchResults = toSignal(
+    toObservable(this.searchTerm).pipe(
+      // 1. Espera: no se consulta en cada tecla, solo cuando el usuario para.
+      debounceTime(SEARCH_DEBOUNCE_MS),
+      map((term) => term.trim()),
+      // 2. Sin duplicadas: escribir «red » y volver a «red» no repite la
+      //    petición, porque el término efectivo no ha cambiado.
+      distinctUntilChanged(),
+      // Un término vacío no se consulta: para eso ya está la colección
+      // completa que el servicio cargó al arrancar.
+      filter((term) => term !== ''),
+      tap(() => {
+        this.searching.set(true);
+        this.searchError.set(null);
+      }),
+      // 3. Cancelación: switchMap descarta la petición anterior en cuanto
+      //    llega un término nuevo, así que una respuesta lenta y vieja nunca
+      //    puede sobrescribir a una reciente.
+      switchMap((term) =>
+        this.incidentApi.search(term).pipe(
+          // 4. El error se atiende DENTRO del switchMap: así muere la
+          //    petición fallida, no el flujo de búsqueda. Si el catchError
+          //    estuviera fuera, un fallo dejaría la caja de texto muerta.
+          catchError((failure: Error) => {
+            this.searchError.set(failure.message);
+            return of<Incident[]>([]);
+          }),
+        ),
       ),
+      tap(() => this.searching.set(false)),
+    ),
+    { initialValue: [] as Incident[] },
   );
 
-  /** Lo que realmente se pinta: la colección pasada por los criterios. */
+  // --- Valores derivados ---------------------------------------------------
+
+  /**
+   * Lo que se pinta: los resultados del servidor, cruzados con la colección
+   * viva y pasados por los filtros locales.
+   *
+   * El cruce con la colección es lo que hace que al eliminar una incidencia
+   * desaparezca al instante, sin repetir la búsqueda.
+   */
   protected readonly visibleIncidents = computed(() => {
-    const criteria = this.criteria();
-    return this.incidents().filter((incident) => criteria.matches(incident));
+    const term = this.searchTerm().trim();
+    const status = this.statusFilter();
+    const priority = this.priorityFilter();
+
+    // Sin término no hace falta preguntar: se parte de lo ya cargado. Con
+    // término, de lo que respondió el servidor.
+    const base = term ? this.searchResults() : this.incidents();
+    const alive = new Set(this.incidents().map((incident) => incident.id));
+
+    return base.filter(
+      (incident) =>
+        alive.has(incident.id) &&
+        (status === ANY || incident.status === status) &&
+        (priority === ANY || incident.priority === priority),
+    );
   });
 
   protected readonly visibleCount = computed(() => this.visibleIncidents().length);
@@ -74,10 +141,6 @@ export class IncidentList {
   protected readonly selectedIncident = computed(() =>
     this.incidents().find((incident) => incident.id === this.selectedId()),
   );
-
-  protected readonly loading = this.incidentService.loading;
-  protected readonly error = this.incidentService.error;
-  protected readonly loaded = this.incidentService.loaded;
 
   // --- Acciones ------------------------------------------------------------
 

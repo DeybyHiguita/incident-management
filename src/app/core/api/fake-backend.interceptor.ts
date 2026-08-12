@@ -41,10 +41,26 @@ export function failNextApiRequest(): void {
   failNextRequest = true;
 }
 
+/**
+ * Registro de peticiones atendidas.
+ *
+ * Como el interceptor responde en el cliente, estas peticiones nunca llegan
+ * a la red y no aparecen en la pestaña Network del navegador. Este registro
+ * permite verlas —desde la consola, `window.__fakeBackendCalls`— y es la
+ * forma de comprobar cosas como el debounce de la búsqueda.
+ */
+export const fakeBackendCalls: string[] = [];
+
+if (typeof globalThis !== 'undefined') {
+  (globalThis as Record<string, unknown>)['__fakeBackendCalls'] = fakeBackendCalls;
+}
+
 export const fakeBackendInterceptor: HttpInterceptorFn = (request, next) => {
   if (!request.url.startsWith(BASE_URL)) {
     return next(request);
   }
+
+  fakeBackendCalls.push(`${request.method} ${request.urlWithParams}`);
 
   // Interruptor de fallos para demostraciones: desde la consola del
   // navegador, `sessionStorage.setItem('fake-backend:fail', '1')` hace que
@@ -56,11 +72,11 @@ export const fakeBackendInterceptor: HttpInterceptorFn = (request, next) => {
     return fail(500, 'El servidor no pudo procesar la solicitud.');
   }
 
-  const id = request.url.slice(BASE_URL.length).replace(/^\//, '');
+  const id = request.url.slice(BASE_URL.length).replace(/^\//, '').split('?')[0];
 
   switch (request.method) {
     case 'GET':
-      return id ? getOne(id) : ok(database.map((incident) => ({ ...incident })));
+      return id ? getOne(id) : getMany(request.params.get('search'));
 
     case 'POST':
       return create(request.body as Incident);
@@ -75,6 +91,26 @@ export const fakeBackendInterceptor: HttpInterceptorFn = (request, next) => {
       return fail(405, `Método no permitido: ${request.method}.`);
   }
 };
+
+/**
+ * Colección completa o filtrada por texto.
+ *
+ * La búsqueda la hace el servidor, igual que haría una API real: el cliente
+ * solo manda el término.
+ */
+function getMany(search: string | null): Observable<HttpResponse<Incident[]>> {
+  const term = search?.trim().toLowerCase() ?? '';
+
+  const result = term
+    ? database.filter(
+        (incident) =>
+          incident.title.toLowerCase().includes(term) ||
+          incident.description.toLowerCase().includes(term),
+      )
+    : database;
+
+  return ok(result.map((incident) => ({ ...incident })));
+}
 
 function getOne(id: string): Observable<HttpResponse<Incident>> {
   const found = database.find((incident) => incident.id === id);
