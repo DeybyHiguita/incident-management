@@ -1,5 +1,11 @@
 <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
 
+<!-- Barra global de actividad. Va fuera del <main> porque no pertenece a
+     ninguna pantalla: refleja que hay red en curso, la pida quien la pida. -->
+@if (loading()) {
+  <div class="global-progress" role="progressbar" aria-label="Cargando" aria-busy="true"></div>
+}
+
 <app-header [systemTitle]="systemTitle" [userName]="currentUser().name" />
 
 <main class="app-main" id="main-content" tabindex="-1">

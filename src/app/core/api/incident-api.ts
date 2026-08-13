@@ -1,6 +1,6 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Incident } from '../models/incident.model';
 
 /** Ruta base de la API de incidencias. */
@@ -10,12 +10,11 @@ const BASE_URL = '/api/incidents';
  * Capa de acceso HTTP.
  *
  * Su única responsabilidad es **hablar con el servidor**: construir la URL,
- * elegir el verbo y tipar la respuesta. No guarda estado, no decide reglas
- * de negocio y no sabe nada de la interfaz.
+ * elegir el verbo y tipar la respuesta.
  *
- * Esa separación es la que permite que `IncidentService` siga siendo el
- * dueño del estado, como desde el Día 9, sin enterarse de que los datos
- * ahora viajan por la red.
+ * Desde el Día 18 tampoco traduce los errores: de eso se encarga
+ * `errorHandlingInterceptor`, que lo hace para toda la aplicación. Así, una
+ * capa de acceso nueva no tiene que acordarse de repetir esa lógica.
  */
 @Injectable({
   providedIn: 'root',
@@ -25,7 +24,7 @@ export class IncidentApi {
 
   /** `GET /api/incidents` */
   getAll(): Observable<Incident[]> {
-    return this.http.get<Incident[]>(BASE_URL).pipe(catchError(toReadableError));
+    return this.http.get<Incident[]>(BASE_URL);
   }
 
   /**
@@ -39,50 +38,26 @@ export class IncidentApi {
     // Un HttpParams vacío no añade la interrogación a la URL.
     const params = trimmed ? new HttpParams().set('search', trimmed) : new HttpParams();
 
-    return this.http.get<Incident[]>(BASE_URL, { params }).pipe(catchError(toReadableError));
+    return this.http.get<Incident[]>(BASE_URL, { params });
   }
 
   /** `GET /api/incidents/:id` */
   getById(id: string): Observable<Incident> {
-    return this.http.get<Incident>(`${BASE_URL}/${id}`).pipe(catchError(toReadableError));
+    return this.http.get<Incident>(`${BASE_URL}/${id}`);
   }
 
   /** `POST /api/incidents` */
   create(incident: Incident): Observable<Incident> {
-    return this.http.post<Incident>(BASE_URL, incident).pipe(catchError(toReadableError));
+    return this.http.post<Incident>(BASE_URL, incident);
   }
 
   /** `PUT /api/incidents/:id` */
   update(incident: Incident): Observable<Incident> {
-    return this.http
-      .put<Incident>(`${BASE_URL}/${incident.id}`, incident)
-      .pipe(catchError(toReadableError));
+    return this.http.put<Incident>(`${BASE_URL}/${incident.id}`, incident);
   }
 
   /** `DELETE /api/incidents/:id` */
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(`${BASE_URL}/${id}`).pipe(catchError(toReadableError));
+    return this.http.delete<void>(`${BASE_URL}/${id}`);
   }
-}
-
-/**
- * Traduce el error HTTP a un mensaje que se le puede enseñar a una persona.
- *
- * Se hace aquí, en la frontera, para que ni el servicio ni los componentes
- * tengan que saber qué es un código 404 o un `HttpErrorResponse`.
- */
-function toReadableError(error: HttpErrorResponse): Observable<never> {
-  if (error.status === 0) {
-    return throwError(() => new Error('No hay conexión con el servidor.'));
-  }
-
-  const messages: Record<number, string> = {
-    404: 'La incidencia solicitada no existe.',
-    500: 'El servidor no pudo procesar la solicitud.',
-  };
-
-  const message =
-    error.error?.message ?? messages[error.status] ?? `Error inesperado (${error.status}).`;
-
-  return throwError(() => new Error(message));
 }

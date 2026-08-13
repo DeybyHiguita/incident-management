@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, finalize, tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
+import { LoadingService } from './loading-service';
 import { Incident, IncidentChanges, IncidentDraft } from '../models/incident.model';
 import { IncidentSearchCriteria } from '../models/incident-search-criteria.model';
 import { IncidentApi } from '../api/incident-api';
@@ -22,11 +23,10 @@ export class IncidentService {
   private readonly collection = signal<readonly Incident[]>([]);
 
   /**
-   * Peticiones en vuelo. Es un contador y no un booleano para que dos
-   * operaciones simultáneas no se pisen: la primera en terminar dejaría el
-   * indicador apagado mientras la otra sigue.
+   * El recuento de peticiones ya no se lleva aquí: desde el Día 18 lo hace
+   * `loadingInterceptor` para toda la aplicación.
    */
-  private readonly pendingRequests = signal(0);
+  private readonly loadingService = inject(LoadingService);
 
   private readonly lastError = signal<string | null>(null);
 
@@ -35,7 +35,7 @@ export class IncidentService {
 
   readonly incidents = this.collection.asReadonly();
   readonly error = this.lastError.asReadonly();
-  readonly loading = computed(() => this.pendingRequests() > 0);
+  readonly loading = this.loadingService.loading;
 
   /** Distingue «no hay incidencias» de «todavía no han llegado». */
   readonly loaded = this.initialized.asReadonly();
@@ -152,18 +152,19 @@ export class IncidentService {
   // --- Interno -------------------------------------------------------------
 
   /**
-   * Envuelve una llamada a la API con la contabilidad de carga y errores,
-   * para no repetir lo mismo en cada método.
+   * Registra el último error para poder mostrarlo.
+   *
+   * El mensaje ya viene traducido por `errorHandlingInterceptor`, así que
+   * aquí no hay que saber nada de códigos HTTP. Y la carga tampoco se
+   * cuenta: la lleva el interceptor.
    */
   private request<T>(source: Observable<T>): Observable<T> {
-    this.pendingRequests.update((count) => count + 1);
     this.lastError.set(null);
 
     return source.pipe(
       tap({
         error: (error: Error) => this.lastError.set(error.message),
       }),
-      finalize(() => this.pendingRequests.update((count) => count - 1)),
     );
   }
 

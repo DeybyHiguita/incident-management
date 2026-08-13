@@ -7,6 +7,9 @@ import {
   setFakeBackendLatency,
 } from '../core/api/fake-backend.interceptor';
 import { IncidentService } from '../core/services/incident-service';
+import { correlationIdInterceptor } from '../core/http/correlation-id.interceptor';
+import { errorHandlingInterceptor } from '../core/http/error-handling.interceptor';
+import { loadingInterceptor } from '../core/http/loading.interceptor';
 
 /**
  * Utilidades para probar contra la API simulada.
@@ -16,9 +19,20 @@ import { IncidentService } from '../core/services/incident-service';
  * lugar de sustituir la capa HTTP por un doble.
  */
 
-/** Proveedores de HTTP con el backend simulado. */
+/**
+ * Proveedores de HTTP con la **misma cadena de interceptores** que usa la
+ * aplicación, para que las pruebas recorran el camino real: correlación,
+ * contabilidad de carga y traducción de errores incluidas.
+ */
 export function provideTestApi(): EnvironmentProviders {
-  return provideHttpClient(withInterceptors([fakeBackendInterceptor]));
+  return provideHttpClient(
+    withInterceptors([
+      correlationIdInterceptor,
+      loadingInterceptor,
+      errorHandlingInterceptor,
+      fakeBackendInterceptor,
+    ]),
+  );
 }
 
 /**

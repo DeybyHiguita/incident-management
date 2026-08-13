@@ -84,46 +84,29 @@ describe('IncidentApi', () => {
     request.flush(null);
   });
 
-  describe('traducción de errores', () => {
-    it('convierte un 404 en un mensaje legible', () => {
-      let failed: Error | undefined;
-      api.getById('inc-999').subscribe({ error: (error) => (failed = error) });
+  it('busca con el término como parámetro de consulta', () => {
+    api.search('servidor').subscribe();
 
-      http
-        .expectOne('/api/incidents/inc-999')
-        .flush(null, { status: 404, statusText: 'Not Found' });
+    const request = http.expectOne((r) => r.url === '/api/incidents');
+    expect(request.request.params.get('search')).toBe('servidor');
+    request.flush([]);
+  });
 
-      expect(failed).toEqual(jasmine.any(Error));
-      expect(failed?.message).toBe('La incidencia solicitada no existe.');
-    });
+  it('un término vacío no añade el parámetro', () => {
+    api.search('   ').subscribe();
 
-    it('convierte un 500 en un mensaje legible', () => {
-      let failed: Error | undefined;
-      api.getAll().subscribe({ error: (error) => (failed = error) });
+    const request = http.expectOne('/api/incidents');
+    expect(request.request.params.has('search')).toBe(false);
+    request.flush([]);
+  });
 
-      http.expectOne('/api/incidents').flush(null, { status: 500, statusText: 'Server Error' });
+  it('no traduce los errores: eso es cosa del interceptor (Día 18)', () => {
+    let failure: unknown;
+    api.getAll().subscribe({ error: (error) => (failure = error) });
 
-      expect(failed?.message).toBe('El servidor no pudo procesar la solicitud.');
-    });
+    http.expectOne('/api/incidents').flush(null, { status: 500, statusText: 'Error' });
 
-    it('avisa de la falta de conexión', () => {
-      let failed: Error | undefined;
-      api.getAll().subscribe({ error: (error) => (failed = error) });
-
-      http.expectOne('/api/incidents').error(new ProgressEvent('error'));
-
-      expect(failed?.message).toBe('No hay conexión con el servidor.');
-    });
-
-    it('prefiere el mensaje que envía el propio servidor', () => {
-      let failed: Error | undefined;
-      api.getAll().subscribe({ error: (error) => (failed = error) });
-
-      http
-        .expectOne('/api/incidents')
-        .flush({ message: 'Mantenimiento programado.' }, { status: 503, statusText: 'Unavailable' });
-
-      expect(failed?.message).toBe('Mantenimiento programado.');
-    });
+    // Sin interceptores, lo que llega es el error HTTP en crudo.
+    expect((failure as { status: number }).status).toBe(500);
   });
 });
