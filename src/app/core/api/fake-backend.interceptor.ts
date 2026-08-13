@@ -1,7 +1,9 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { Observable, delay, of, throwError } from 'rxjs';
 import { Incident } from '../models/incident.model';
+import { AuthResponse, Credentials } from '../models/auth.model';
 import { MOCK_INCIDENTS } from '../mocks/incidents.mock';
+import { MOCK_USERS } from '../mocks/users.mock';
 
 /**
  * API simulada.
@@ -25,6 +27,17 @@ export function setFakeBackendLatency(ms: number): void {
 
 /** Base de la API. */
 const BASE_URL = '/api/incidents';
+
+/** Extremo de autenticación. */
+const AUTH_URL = '/api/auth/login';
+
+/**
+ * Contraseña válida para cualquier usuario simulado.
+ *
+ * Es una demostración: no hay usuarios reales ni contraseñas guardadas.
+ * En una API de verdad esto lo comprobaría el servidor contra un hash.
+ */
+export const DEMO_PASSWORD = 'angular20';
 
 /** Estado del servidor simulado. Vive fuera del interceptor: es «la base de datos». */
 let database: Incident[] = MOCK_INCIDENTS.map((incident) => ({ ...incident }));
@@ -56,6 +69,11 @@ if (typeof globalThis !== 'undefined') {
 }
 
 export const fakeBackendInterceptor: HttpInterceptorFn = (request, next) => {
+  if (request.url.startsWith(AUTH_URL)) {
+    fakeBackendCalls.push(`${request.method} ${request.url}`);
+    return login(request.body as Credentials);
+  }
+
   if (!request.url.startsWith(BASE_URL)) {
     return next(request);
   }
@@ -91,6 +109,31 @@ export const fakeBackendInterceptor: HttpInterceptorFn = (request, next) => {
       return fail(405, `Método no permitido: ${request.method}.`);
   }
 };
+
+/**
+ * Autenticación simulada.
+ *
+ * Devuelve token y usuario, como haría una API real. Rechaza con 401 si el
+ * correo no existe o la contraseña no coincide — el mismo mensaje en ambos
+ * casos, para no revelar qué correos están registrados.
+ */
+function login(credentials: Credentials | null): Observable<HttpResponse<AuthResponse>> {
+  const email = credentials?.email?.trim().toLowerCase() ?? '';
+  const user = MOCK_USERS.find((candidate) => candidate.email.toLowerCase() === email);
+
+  if (!user || credentials?.password !== DEMO_PASSWORD) {
+    return fail(401, 'Correo o contraseña incorrectos.');
+  }
+
+  return ok({
+    token: `fake-token.${btoa(user.id)}.${Date.now().toString(36)}`,
+    user: { ...user },
+    expiresAt: Date.now() + SESSION_DURATION_MS,
+  });
+}
+
+/** Duración de la sesión simulada: 8 horas. */
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 
 /**
  * Colección completa o filtrada por texto.

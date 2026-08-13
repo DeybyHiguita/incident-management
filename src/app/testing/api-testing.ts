@@ -2,10 +2,13 @@ import { EnvironmentProviders } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TestBed, tick } from '@angular/core/testing';
 import {
+  DEMO_PASSWORD,
   fakeBackendInterceptor,
   resetFakeBackend,
   setFakeBackendLatency,
 } from '../core/api/fake-backend.interceptor';
+import { AuthService } from '../core/services/auth-service';
+import { authTokenInterceptor } from '../core/http/auth-token.interceptor';
 import { IncidentService } from '../core/services/incident-service';
 import { correlationIdInterceptor } from '../core/http/correlation-id.interceptor';
 import { errorHandlingInterceptor } from '../core/http/error-handling.interceptor';
@@ -28,11 +31,27 @@ export function provideTestApi(): EnvironmentProviders {
   return provideHttpClient(
     withInterceptors([
       correlationIdInterceptor,
+      authTokenInterceptor,
       loadingInterceptor,
       errorHandlingInterceptor,
       fakeBackendInterceptor,
     ]),
   );
+}
+
+/** Credenciales válidas del backend simulado. */
+export const TEST_CREDENTIALS = {
+  email: 'ana.torres@example.com',
+  password: DEMO_PASSWORD,
+};
+
+/**
+ * Inicia sesión y espera a la respuesta.
+ * Solo se puede llamar dentro de `fakeAsync`.
+ */
+export function loginForTest(): void {
+  TestBed.inject(AuthService).login(TEST_CREDENTIALS).subscribe();
+  tick();
 }
 
 /**
@@ -43,6 +62,9 @@ export function provideTestApi(): EnvironmentProviders {
 export function prepareApi(): void {
   resetFakeBackend();
   setFakeBackendLatency(0);
+  // La sesión persiste en sessionStorage: sin esto, una prueba arrastraría
+  // la sesión de la anterior.
+  sessionStorage.clear();
 }
 
 /**

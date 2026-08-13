@@ -7,6 +7,7 @@ import {
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import { fakeBackendInterceptor } from './core/api/fake-backend.interceptor';
+import { authTokenInterceptor } from './core/http/auth-token.interceptor';
 import { correlationIdInterceptor } from './core/http/correlation-id.interceptor';
 import { errorHandlingInterceptor } from './core/http/error-handling.interceptor';
 import { loadingInterceptor } from './core/http/loading.interceptor';
@@ -40,6 +41,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([
         correlationIdInterceptor,
+        authTokenInterceptor,
         loadingInterceptor,
         errorHandlingInterceptor,
         fakeBackendInterceptor,

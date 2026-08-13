@@ -2,61 +2,69 @@
   <div class="app-header-bar">
     <h1 class="app-header-title">{{ systemTitle }}</h1>
 
-    <nav class="app-header-nav" aria-label="Navegación principal">
-      <ul class="app-header-nav-list">
-        <li>
-          <a
-            class="app-header-nav-link"
-            routerLink="/dashboard"
-            routerLinkActive="app-header-nav-link--active"
-            ariaCurrentWhenActive="page"
-          >
-            Panel
-          </a>
-        </li>
-        <li>
-          <!-- `exact: true` evita que «Incidencias» se marque como activa
-               estando en /incidents/new o en el detalle. -->
-          <a
-            class="app-header-nav-link"
-            routerLink="/incidents"
-            routerLinkActive="app-header-nav-link--active"
-            [routerLinkActiveOptions]="{ exact: true }"
-            ariaCurrentWhenActive="page"
-          >
-            Incidencias
-          </a>
-        </li>
-        <li>
-          <a
-            class="app-header-nav-link"
-            routerLink="/incidents/new"
-            routerLinkActive="app-header-nav-link--active"
-            ariaCurrentWhenActive="page"
-          >
-            Nueva
-          </a>
-        </li>
-      </ul>
-    </nav>
+    <!-- La navegación y la sesión solo tienen sentido con alguien dentro. -->
+    @if (isAuthenticated()) {
+      <nav class="app-header-nav" aria-label="Navegación principal">
+        <ul class="app-header-nav-list">
+          <li>
+            <a
+              class="app-header-nav-link"
+              routerLink="/dashboard"
+              routerLinkActive="app-header-nav-link--active"
+              ariaCurrentWhenActive="page"
+            >
+              Panel
+            </a>
+          </li>
+          <li>
+            <!-- `exact: true` evita que «Incidencias» se marque como activa
+                 estando en /incidents/new o en el detalle. -->
+            <a
+              class="app-header-nav-link"
+              routerLink="/incidents"
+              routerLinkActive="app-header-nav-link--active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              ariaCurrentWhenActive="page"
+            >
+              Incidencias
+            </a>
+          </li>
+          <li>
+            <a
+              class="app-header-nav-link"
+              routerLink="/incidents/new"
+              routerLinkActive="app-header-nav-link--active"
+              ariaCurrentWhenActive="page"
+            >
+              Nueva
+            </a>
+          </li>
+        </ul>
+      </nav>
 
-    <!-- La misma directiva de foco que usa la tarjeta, en otro componente. -->
-    <div class="app-header-user" appFocusWithin>
-      <span class="app-header-user-name">{{ userName }}</span>
-      <button
-        type="button"
-        class="btn app-header-toggle"
-        id="user-details-toggle"
-        [attr.aria-expanded]="showUserDetails()"
-        aria-controls="user-details"
-        (click)="toggleUserDetails()"
-      >
-        {{ showUserDetails() ? 'Ocultar detalles' : 'Mostrar detalles' }}
-      </button>
-    </div>
+      <!-- La misma directiva de foco que usa la tarjeta, en otro componente. -->
+      <div class="app-header-user" appFocusWithin>
+        <span class="app-header-user-name">{{ currentUser()!.name }}</span>
+        <button
+          type="button"
+          class="btn app-header-toggle"
+          id="user-details-toggle"
+          [attr.aria-expanded]="showUserDetails()"
+          aria-controls="user-details"
+          (click)="toggleUserDetails()"
+        >
+          {{ showUserDetails() ? 'Ocultar detalles' : 'Mostrar detalles' }}
+        </button>
+        <button type="button" class="btn app-header-toggle" (click)="logout()">
+          Cerrar sesión
+        </button>
+      </div>
+    }
   </div>
 
-  @if (showUserDetails()) {
-    <p class="app-header-details" id="user-details">Sesión simulada de: {{ userName }}</p>
+  @if (isAuthenticated() && showUserDetails()) {
+    <p class="app-header-details" id="user-details">
+      {{ currentUser()!.email }} · {{ currentUser()!.role }}
+    </p>
   }
 </header>

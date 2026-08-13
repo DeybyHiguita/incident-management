@@ -1,0 +1,52 @@
+<section class="login">
+  <form class="login-card" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <h2 class="login-title">Iniciar sesión</h2>
+    <p class="login-subtitle">Accede para gestionar las incidencias.</p>
+
+    @if (error(); as message) {
+      <p class="error-banner" role="alert">{{ message }}</p>
+    }
+
+    <div class="login-field">
+      <label class="login-label" for="email">Correo electrónico</label>
+      <input
+        class="login-control"
+        id="email"
+        type="email"
+        autocomplete="username"
+        formControlName="email"
+        [attr.aria-invalid]="showError('email')"
+        [attr.aria-describedby]="showError('email') ? 'email-error' : null"
+      />
+      @if (showError('email')) {
+        <p class="login-error" id="email-error">{{ fieldError('email') }}</p>
+      }
+    </div>
+
+    <div class="login-field">
+      <label class="login-label" for="password">Contraseña</label>
+      <input
+        class="login-control"
+        id="password"
+        type="password"
+        autocomplete="current-password"
+        formControlName="password"
+        [attr.aria-invalid]="showError('password')"
+        [attr.aria-describedby]="showError('password') ? 'password-error' : null"
+      />
+      @if (showError('password')) {
+        <p class="login-error" id="password-error">{{ fieldError('password') }}</p>
+      }
+    </div>
+
+    <button type="submit" class="btn btn--primary login-submit" [disabled]="loading()">
+      {{ loading() ? 'Entrando…' : 'Entrar' }}
+    </button>
+
+    <!-- Credenciales a la vista: es una demostración sin usuarios reales. -->
+    <p class="login-hint">
+      Demostración: usa <code>ana.torres&#64;example.com</code> con la contraseña
+      <code>angular20</code>.
+    </p>
+  </form>
+</section>
