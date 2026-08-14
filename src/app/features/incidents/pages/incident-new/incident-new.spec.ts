@@ -3,13 +3,13 @@ import { Router, provideRouter } from '@angular/router';
 import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { IncidentNew } from './incident-new';
-import { IncidentService } from '../../../../core/services/incident-service';
+import { IncidentStore } from '../../../../core/state/incident-store';
 import { UserService } from '../../../../core/services/user-service';
 
 describe('IncidentNew', () => {
   let component: IncidentNew;
   let fixture: ComponentFixture<IncidentNew>;
-  let service: IncidentService;
+  let store: IncidentStore;
   let router: Router;
 
   beforeEach(async () => {
@@ -21,7 +21,7 @@ describe('IncidentNew', () => {
   });
 
   beforeEach(fakeAsync(() => {
-    service = loadIncidents();
+    store = loadIncidents();
 
     router = TestBed.inject(Router);
     spyOn(router, 'navigate');
@@ -41,18 +41,18 @@ describe('IncidentNew', () => {
 
   it('registra la incidencia con el usuario de la sesión', fakeAsync(() => {
     const currentUser = TestBed.inject(UserService).currentUser();
-    const before = service.getAll().length;
+    const before = store.getAll().length;
 
     submitValidForm();
 
-    expect(service.getAll().length).toBe(before + 1);
-    expect(service.getAll().at(-1)!.reporterId).toBe(currentUser.id);
+    expect(store.getAll().length).toBe(before + 1);
+    expect(store.getAll().at(-1)!.reporterId).toBe(currentUser.id);
   }));
 
   it('navega al detalle de la incidencia recién creada', fakeAsync(() => {
     submitValidForm();
 
-    const created = service.getAll().at(-1)!;
+    const created = store.getAll().at(-1)!;
     expect(router.navigate).toHaveBeenCalledWith(['/incidents', created.id]);
   }));
 
@@ -64,12 +64,12 @@ describe('IncidentNew', () => {
   }));
 
   it('cancelar vuelve al listado sin registrar nada', fakeAsync(() => {
-    const before = service.getAll().length;
+    const before = store.getAll().length;
 
     clickButton('Cancelar');
 
     expect(router.navigate).toHaveBeenCalledWith(['/incidents']);
-    expect(service.getAll().length).toBe(before);
+    expect(store.getAll().length).toBe(before);
   }));
 
   function clickButton(label: string): void {

@@ -8,7 +8,7 @@ import {
 } from '../../../../testing/api-testing';
 
 import { IncidentDetail } from './incident-detail';
-import { IncidentService } from '../../../../core/services/incident-service';
+import { IncidentStore } from '../../../../core/state/incident-store';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
 
 describe('IncidentDetail', () => {
@@ -85,7 +85,7 @@ describe('IncidentDetail', () => {
     setId('inc-001');
     expect(text()).toContain('No se puede iniciar sesión');
 
-    TestBed.inject(IncidentService).remove('inc-001').subscribe();
+    TestBed.inject(IncidentStore).remove('inc-001').subscribe();
     tick();
     fixture.detectChanges();
 

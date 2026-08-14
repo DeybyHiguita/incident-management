@@ -12,7 +12,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 import { IncidentList } from './incident-list';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
-import { IncidentService } from '../../../../core/services/incident-service';
+import { IncidentStore } from '../../../../core/state/incident-store';
 
 /** Ancho de referencia del teléfono más estrecho que soportamos. */
 const NARROW_VIEWPORT_PX = 320;
@@ -20,7 +20,7 @@ const NARROW_VIEWPORT_PX = 320;
 describe('IncidentList', () => {
   let fixture: ComponentFixture<IncidentList>;
   let component: IncidentList;
-  let service: IncidentService;
+  let store: IncidentStore;
   let api: IncidentApi;
 
   beforeEach(async () => {
@@ -35,7 +35,7 @@ describe('IncidentList', () => {
   beforeEach(fakeAsync(() => {
     // El servicio carga desde la API en su constructor: se deja llegar la
     // respuesta antes de renderizar.
-    service = loadIncidents();
+    store = loadIncidents();
     api = TestBed.inject(IncidentApi);
 
     fixture = TestBed.createComponent(IncidentList);
@@ -76,17 +76,17 @@ describe('IncidentList', () => {
   }));
 
   it('delega la eliminación en el servicio en vez de gestionar los datos', fakeAsync(() => {
-    spyOn(service, 'remove').and.callThrough();
+    spyOn(store, 'remove').and.callThrough();
 
     clickIn(cards()[0], 'Eliminar incidencia');
 
-    expect(service.remove).toHaveBeenCalledWith(MOCK_INCIDENTS[0].id);
+    expect(store.remove).toHaveBeenCalledWith(MOCK_INCIDENTS[0].id);
   }));
 
   it('refleja los cambios que otro consumidor haga en el servicio', fakeAsync(() => {
     // Nadie tocó el componente: el estado vive en el servicio y la vista
     // se actualiza sola porque lee una señal.
-    service.remove(MOCK_INCIDENTS[0].id).subscribe();
+    store.remove(MOCK_INCIDENTS[0].id).subscribe();
     tick();
     fixture.detectChanges();
 
@@ -179,7 +179,7 @@ describe('IncidentList', () => {
       const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
       const criticalBefore = Number(stat('Críticas'));
 
-      service.remove(critical.id).subscribe();
+      store.remove(critical.id).subscribe();
       tick();
       fixture.detectChanges();
 
@@ -351,7 +351,7 @@ describe('IncidentList', () => {
       expect(cards().length).toBe(1);
 
       const impresora = MOCK_INCIDENTS.find((i) => i.title.includes('Impresora'))!;
-      service.remove(impresora.id).subscribe();
+      store.remove(impresora.id).subscribe();
       tick();
       fixture.detectChanges();
 
@@ -375,7 +375,7 @@ describe('IncidentList', () => {
     }));
 
     it('recarga periódicamente mientras está activo', fakeAsync(() => {
-      const spy = spyOn(service, 'load').and.callThrough();
+      const spy = spyOn(store, 'load').and.callThrough();
 
       toggleAutoRefresh();
 
@@ -395,7 +395,7 @@ describe('IncidentList', () => {
       tick(AUTO_REFRESH_MS);
 
       toggleAutoRefresh();
-      const spy = spyOn(service, 'load').and.callThrough();
+      const spy = spyOn(store, 'load').and.callThrough();
 
       tick(AUTO_REFRESH_MS * 3);
 
@@ -405,7 +405,7 @@ describe('IncidentList', () => {
 
     it('el temporizador muere con el componente', fakeAsync(() => {
       toggleAutoRefresh();
-      const spy = spyOn(service, 'load').and.callThrough();
+      const spy = spyOn(store, 'load').and.callThrough();
 
       fixture.destroy();
       tick(AUTO_REFRESH_MS * 3);
@@ -417,7 +417,7 @@ describe('IncidentList', () => {
 
   describe('listener del navegador', () => {
     it('recarga al recuperar la conexión', fakeAsync(() => {
-      const spy = spyOn(service, 'load').and.callThrough();
+      const spy = spyOn(store, 'load').and.callThrough();
 
       window.dispatchEvent(new Event('online'));
       tick();
@@ -428,7 +428,7 @@ describe('IncidentList', () => {
 
     it('se da de baja al destruir el componente', fakeAsync(() => {
       fixture.destroy();
-      const spy = spyOn(service, 'load').and.callThrough();
+      const spy = spyOn(store, 'load').and.callThrough();
 
       window.dispatchEvent(new Event('online'));
       tick();
@@ -441,7 +441,7 @@ describe('IncidentList', () => {
 
   it('una eliminación en vuelo no afecta al componente ya destruido', fakeAsync(() => {
     setFakeBackendLatency(50);
-    const before = service.getAll().length;
+    const before = store.getAll().length;
 
     findIn(cards()[0], 'Eliminar incidencia').click();
     fixture.destroy();
@@ -449,7 +449,7 @@ describe('IncidentList', () => {
 
     // La suscripción se cortó con el componente: el servicio no se actualiza
     // desde una vista que ya no existe.
-    expect(service.getAll().length).toBe(before);
+    expect(store.getAll().length).toBe(before);
     setFakeBackendLatency(0);
   }));
 

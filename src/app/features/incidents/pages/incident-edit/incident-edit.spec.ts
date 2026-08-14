@@ -3,13 +3,13 @@ import { Router, provideRouter } from '@angular/router';
 import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { IncidentEdit } from './incident-edit';
-import { IncidentService } from '../../../../core/services/incident-service';
+import { IncidentStore } from '../../../../core/state/incident-store';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
 
 describe('IncidentEdit', () => {
   let component: IncidentEdit;
   let fixture: ComponentFixture<IncidentEdit>;
-  let service: IncidentService;
+  let store: IncidentStore;
   let router: Router;
 
   beforeEach(async () => {
@@ -21,7 +21,7 @@ describe('IncidentEdit', () => {
   });
 
   beforeEach(fakeAsync(() => {
-    service = loadIncidents();
+    store = loadIncidents();
 
     router = TestBed.inject(Router);
     spyOn(router, 'navigate');
@@ -57,7 +57,7 @@ describe('IncidentEdit', () => {
     setValue('#incident-title', 'Título corregido tras revisión', 'input');
     submit();
 
-    expect(service.getById('inc-001')?.title).toBe('Título corregido tras revisión');
+    expect(store.getById('inc-001')?.title).toBe('Título corregido tras revisión');
     }));
 
   it('conserva el identificador y la fecha de creación', fakeAsync(() => {
@@ -67,7 +67,7 @@ describe('IncidentEdit', () => {
     setValue('#incident-title', 'Título corregido tras revisión', 'input');
     submit();
 
-    const updated = service.getById(original.id)!;
+    const updated = store.getById(original.id)!;
     expect(updated.id).toBe(original.id);
     expect(updated.createdAt).toBe(original.createdAt);
     expect(updated.updatedAt).not.toBe(original.updatedAt);
@@ -88,7 +88,7 @@ describe('IncidentEdit', () => {
     setValue('#incident-title', 'abc', 'input'); // por debajo del mínimo
     submit();
 
-    expect(service.getById('inc-001')?.title).toBe(MOCK_INCIDENTS[0].title);
+    expect(store.getById('inc-001')?.title).toBe(MOCK_INCIDENTS[0].title);
     expect(router.navigate).not.toHaveBeenCalled();
     }));
 
@@ -106,7 +106,7 @@ describe('IncidentEdit', () => {
     clickButton('Cancelar');
 
     expect(router.navigate).toHaveBeenCalledWith(['/incidents', 'inc-001']);
-    expect(service.getById('inc-001')?.title).toBe(MOCK_INCIDENTS[0].title);
+    expect(store.getById('inc-001')?.title).toBe(MOCK_INCIDENTS[0].title);
   }));
 
   it('al editar la acción de reinicio se llama Restablecer', () => {

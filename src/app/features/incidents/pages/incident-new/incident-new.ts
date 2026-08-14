@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { IncidentService } from '../../../../core/services/incident-service';
+import { IncidentStore } from '../../../../core/state/incident-store';
 import { UserService } from '../../../../core/services/user-service';
 import { IncidentForm, IncidentFormValue } from '../../components/incident-form/incident-form';
 
@@ -12,7 +12,7 @@ import { IncidentForm, IncidentFormValue } from '../../components/incident-form/
   styleUrl: './incident-new.scss',
 })
 export class IncidentNew {
-  private readonly incidentService = inject(IncidentService);
+  private readonly store = inject(IncidentStore);
   private readonly userService = inject(UserService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -24,11 +24,11 @@ export class IncidentNew {
    * resultado de una acción. Se usa el id que devuelve el servicio, así que
    * la página no tiene que adivinar a dónde va.
    */
-  protected readonly loading = this.incidentService.loading;
-  protected readonly error = this.incidentService.error;
+  protected readonly loading = this.store.loading;
+  protected readonly error = this.store.error;
 
   protected onSubmitted(value: IncidentFormValue): void {
-    this.incidentService
+    this.store
       .create({ ...value, reporterId: this.userService.currentUser().id })
       // Si el usuario se va de la página antes de que responda el servidor,
       // la suscripción se corta: sin esto se navegaría al detalle desde un

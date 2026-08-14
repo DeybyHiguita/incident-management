@@ -3,13 +3,13 @@ import { provideRouter } from '@angular/router';
 import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 
 import { Dashboard } from './dashboard';
-import { IncidentService } from '../../../../core/services/incident-service';
+import { IncidentStore } from '../../../../core/state/incident-store';
 import { MOCK_INCIDENTS } from '../../../../core/mocks/incidents.mock';
 
 describe('Dashboard', () => {
   let component: Dashboard;
   let fixture: ComponentFixture<Dashboard>;
-  let service: IncidentService;
+  let store: IncidentStore;
 
   beforeEach(async () => {
     prepareApi();
@@ -21,7 +21,7 @@ describe('Dashboard', () => {
 
   beforeEach(fakeAsync(() => {
     // El servicio carga en su constructor: hay que dejar llegar la respuesta.
-    service = loadIncidents();
+    store = loadIncidents();
 
     fixture = TestBed.createComponent(Dashboard);
     component = fixture.componentInstance;
@@ -33,9 +33,9 @@ describe('Dashboard', () => {
   });
 
   it('muestra los mismos indicadores que calcula el servicio', () => {
-    expect(stat('Totales')).toBe(String(service.totalCount()));
-    expect(stat('Críticas')).toBe(String(service.criticalCount()));
-    expect(stat('Abiertas')).toBe(String(service.openCount()));
+    expect(stat('Totales')).toBe(String(store.totalCount()));
+    expect(stat('Críticas')).toBe(String(store.criticalCount()));
+    expect(stat('Abiertas')).toBe(String(store.openCount()));
   });
 
   it('lista las incidencias críticas con enlace a su detalle', () => {
@@ -52,7 +52,7 @@ describe('Dashboard', () => {
   it('se actualiza solo cuando cambian los datos del servicio', fakeAsync(() => {
     const critical = MOCK_INCIDENTS.find((i) => i.priority === 'CRITICAL')!;
 
-    service.remove(critical.id).subscribe();
+    store.remove(critical.id).subscribe();
     tick();
     fixture.detectChanges();
 

@@ -62,7 +62,7 @@
         id="search-term"
         type="search"
         placeholder="Título o descripción"
-        [value]="searchTerm()"
+        [value]="filters().search"
         [attr.aria-busy]="searching()"
         aria-describedby="search-hint"
         (input)="onSearchTermChange($any($event.target).value)"
@@ -83,7 +83,7 @@
       <select
         class="filters-control"
         id="status-filter"
-        [value]="statusFilter()"
+        [value]="filters().status"
         (change)="onStatusFilterChange($any($event.target).value)"
       >
         <option value="">Todos</option>
@@ -99,7 +99,7 @@
       <select
         class="filters-control"
         id="priority-filter"
-        [value]="priorityFilter()"
+        [value]="filters().priority"
         (change)="onPriorityFilterChange($any($event.target).value)"
       >
         <option value="">Todas</option>

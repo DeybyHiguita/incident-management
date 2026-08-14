@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { IncidentService } from '../../../../core/services/incident-service';
+import { IncidentStore } from '../../../../core/state/incident-store';
 import { UserService } from '../../../../core/services/user-service';
 import { AuthService } from '../../../../core/services/auth-service';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
@@ -22,7 +22,7 @@ import { IncidentHighlight } from '../../../../shared/directives/incident-highli
   styleUrl: './incident-detail.scss',
 })
 export class IncidentDetail {
-  private readonly incidentService = inject(IncidentService);
+  private readonly store = inject(IncidentStore);
   private readonly userService = inject(UserService);
 
   /** El guard de la ruta de edición ya lo impide; esto solo evita ofrecerlo. */
@@ -36,7 +36,7 @@ export class IncidentDetail {
   readonly id = input.required<string>();
 
   /** `undefined` si el id no corresponde a ninguna incidencia. */
-  protected readonly incident = computed(() => this.incidentService.getById(this.id()));
+  protected readonly incident = computed(() => this.store.getById(this.id()));
 
   /** Nombre de quien la reportó, resuelto contra el servicio de usuarios. */
   protected readonly reporterName = computed(() => {

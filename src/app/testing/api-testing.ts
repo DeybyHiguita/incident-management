@@ -9,7 +9,7 @@ import {
 } from '../core/api/fake-backend.interceptor';
 import { AuthService } from '../core/services/auth-service';
 import { authTokenInterceptor } from '../core/http/auth-token.interceptor';
-import { IncidentService } from '../core/services/incident-service';
+import { IncidentStore } from '../core/state/incident-store';
 import { correlationIdInterceptor } from '../core/http/correlation-id.interceptor';
 import { errorHandlingInterceptor } from '../core/http/error-handling.interceptor';
 import { loadingInterceptor } from '../core/http/loading.interceptor';
@@ -81,9 +81,9 @@ export function prepareApi(): void {
  * Inyecta el servicio y avanza el tiempo hasta que llega la carga inicial.
  * Solo se puede llamar dentro de `fakeAsync`.
  */
-export function loadIncidents(): IncidentService {
-  const service = TestBed.inject(IncidentService);
+export function loadIncidents(): IncidentStore {
+  const store = TestBed.inject(IncidentStore);
   tick();
 
-  return service;
+  return store;
 }
