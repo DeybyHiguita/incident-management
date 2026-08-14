@@ -19,6 +19,14 @@ export class Header {
   protected readonly currentUser = this.authService.currentUser;
   protected readonly isAuthenticated = this.authService.isAuthenticated;
 
+  /**
+   * Ocultar lo que no se puede usar evita el «clic a la nada»: el guard lo
+   * rebotaría igualmente, pero enseñar una puerta cerrada es mala interfaz.
+   * No sustituye al guard — es la primera de dos barreras, no la única.
+   */
+  protected readonly canManageIncidents = this.authService.canManageIncidents;
+  protected readonly canAdminister = this.authService.canAdminister;
+
   protected readonly showUserDetails = signal(true);
 
   toggleUserDetails(): void {

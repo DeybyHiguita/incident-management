@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/role-guard';
 
 /**
  * Rutas de la funcionalidad de incidencias.
@@ -31,8 +32,10 @@ export const INCIDENT_ROUTES: Routes = [
       },
       {
         // También antes que `:id`: `:id/edit` es más específica.
+        // Quien solo reporta incidencias no las edita.
         path: ':id/edit',
         title: 'Editar incidencia · Gestión de Incidencias',
+        canActivate: [roleGuard('ADMIN', 'AGENT')],
         loadComponent: () =>
           import('./pages/incident-edit/incident-edit').then((m) => m.IncidentEdit),
       },

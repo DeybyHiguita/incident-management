@@ -3,6 +3,7 @@ import { DatePipe, UpperCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { IncidentService } from '../../../../core/services/incident-service';
 import { UserService } from '../../../../core/services/user-service';
+import { AuthService } from '../../../../core/services/auth-service';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
 import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
 import { IncidentHighlight } from '../../../../shared/directives/incident-highlight';
@@ -23,6 +24,9 @@ import { IncidentHighlight } from '../../../../shared/directives/incident-highli
 export class IncidentDetail {
   private readonly incidentService = inject(IncidentService);
   private readonly userService = inject(UserService);
+
+  /** El guard de la ruta de edición ya lo impide; esto solo evita ofrecerlo. */
+  protected readonly canManageIncidents = inject(AuthService).canManageIncidents;
 
   /**
    * Parámetro `:id` de la ruta. Llega como input gracias a

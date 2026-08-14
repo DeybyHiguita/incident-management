@@ -1,0 +1,22 @@
+<section class="forbidden">
+  <p class="forbidden-code" aria-hidden="true">403</p>
+
+  <h2 class="forbidden-title">Acceso denegado</h2>
+
+  <p class="forbidden-message">
+    Tu cuenta no tiene permisos para ver esta página.
+    @if (userName(); as user) {
+      Has entrado como <strong>{{ user.name }}</strong> con el rol
+      <strong>{{ role() }}</strong>.
+    }
+  </p>
+
+  <p class="forbidden-hint">
+    Si crees que deberías tener acceso, pídeselo a un administrador.
+  </p>
+
+  <div class="forbidden-actions">
+    <a class="btn btn--primary" routerLink="/dashboard">Ir al panel</a>
+    <a class="btn" routerLink="/incidents">Ver incidencias</a>
+  </div>
+</section>

@@ -39,18 +39,28 @@ export function provideTestApi(): EnvironmentProviders {
   );
 }
 
-/** Credenciales válidas del backend simulado. */
-export const TEST_CREDENTIALS = {
-  email: 'ana.torres@example.com',
-  password: DEMO_PASSWORD,
-};
+/**
+ * Credenciales válidas por rol.
+ *
+ * Corresponden a los usuarios simulados: Ana es ADMIN, Luis AGENT y Carlos
+ * REQUESTER. Tenerlas por rol permite probar la autorización sin repetir
+ * correos por los specs.
+ */
+export const CREDENTIALS_BY_ROLE = {
+  ADMIN: { email: 'ana.torres@example.com', password: DEMO_PASSWORD },
+  AGENT: { email: 'luis.gomez@example.com', password: DEMO_PASSWORD },
+  REQUESTER: { email: 'carlos.pena@example.com', password: DEMO_PASSWORD },
+} as const;
+
+/** Credenciales por defecto (rol ADMIN). */
+export const TEST_CREDENTIALS = CREDENTIALS_BY_ROLE.ADMIN;
 
 /**
  * Inicia sesión y espera a la respuesta.
  * Solo se puede llamar dentro de `fakeAsync`.
  */
-export function loginForTest(): void {
-  TestBed.inject(AuthService).login(TEST_CREDENTIALS).subscribe();
+export function loginForTest(role: keyof typeof CREDENTIALS_BY_ROLE = 'ADMIN'): void {
+  TestBed.inject(AuthService).login(CREDENTIALS_BY_ROLE[role]).subscribe();
   tick();
 }
 

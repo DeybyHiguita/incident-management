@@ -1,6 +1,11 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
+import {
+  loadIncidents,
+  loginForTest,
+  prepareApi,
+  provideTestApi,
+} from '../../../../testing/api-testing';
 
 import { IncidentDetail } from './incident-detail';
 import { IncidentService } from '../../../../core/services/incident-service';
@@ -20,6 +25,7 @@ describe('IncidentDetail', () => {
 
   beforeEach(fakeAsync(() => {
     loadIncidents();
+    loginForTest('ADMIN');
 
     fixture = TestBed.createComponent(IncidentDetail);
     component = fixture.componentInstance;
@@ -85,6 +91,27 @@ describe('IncidentDetail', () => {
 
     expect(text()).toContain('Incidencia no encontrada');
   }));
+
+  describe('acciones según el rol (Día 20)', () => {
+    it('quien gestiona incidencias ve el enlace de editar', () => {
+      setId('inc-001');
+
+      expect(editLink()).toBeTruthy();
+    });
+
+    it('un REQUESTER no ve el enlace de editar', fakeAsync(() => {
+      loginForTest('REQUESTER');
+      setId('inc-001');
+
+      expect(editLink()).toBeNull();
+      // Pero sigue viendo la incidencia: solo se le oculta la acción.
+      expect(text()).toContain('No se puede iniciar sesión');
+    }));
+
+    function editLink(): HTMLAnchorElement | null {
+      return fixture.nativeElement.querySelector('a[href$="/edit"]');
+    }
+  });
 
   function setId(id: string): void {
     fixture.componentRef.setInput('id', id);

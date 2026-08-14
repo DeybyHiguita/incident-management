@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { AuthResponse, Credentials, Session } from '../models/auth.model';
-import { User } from '../models/user.model';
+import { User, UserRole } from '../models/user.model';
 
 /** Clave de la sesión en el almacenamiento del navegador. */
 const STORAGE_KEY = 'incident-management.session';
@@ -28,6 +28,32 @@ export class AuthService {
   readonly token = computed<string | null>(() => this.session()?.token ?? null);
 
   readonly isAuthenticated = computed(() => this.session() !== null);
+
+  readonly role = computed<UserRole | null>(() => this.session()?.user.role ?? null);
+
+  /**
+   * `true` si el usuario tiene alguno de los roles indicados.
+   *
+   * Es el único sitio donde se decide «puede o no puede». Tanto los guards
+   * como la interfaz preguntan aquí, así que no hay dos reglas distintas
+   * para lo mismo.
+   */
+  hasAnyRole(...roles: readonly UserRole[]): boolean {
+    const current = this.role();
+    return current !== null && roles.includes(current);
+  }
+
+  // --- Permisos del dominio ------------------------------------------------
+  //
+  // Se nombran por lo que **permiten hacer**, no por el rol que lo permite.
+  // Si mañana un rol nuevo puede editar, cambia esta línea y no las quince
+  // plantillas que preguntan.
+
+  /** Solo quien atiende incidencias puede modificarlas. */
+  readonly canManageIncidents = computed(() => this.hasAnyRole('ADMIN', 'AGENT'));
+
+  /** La administración es exclusiva del rol ADMIN. */
+  readonly canAdminister = computed(() => this.hasAnyRole('ADMIN'));
 
   /**
    * Inicia sesión contra la API.

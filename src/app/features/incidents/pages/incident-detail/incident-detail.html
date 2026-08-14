@@ -43,9 +43,11 @@
     }
 
     <div class="detail-actions">
-      <a class="btn btn--primary" [routerLink]="['/incidents', incident.id, 'edit']">
-        Editar incidencia
-      </a>
+      @if (canManageIncidents()) {
+        <a class="btn btn--primary" [routerLink]="['/incidents', incident.id, 'edit']">
+          Editar incidencia
+        </a>
+      }
       <a class="btn" routerLink="/incidents">Volver al listado</a>
     </div>
   </article>

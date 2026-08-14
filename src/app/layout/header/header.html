@@ -39,6 +39,18 @@
               Nueva
             </a>
           </li>
+          @if (canAdminister()) {
+            <li>
+              <a
+                class="app-header-nav-link"
+                routerLink="/admin"
+                routerLinkActive="app-header-nav-link--active"
+                ariaCurrentWhenActive="page"
+              >
+                Administración
+              </a>
+            </li>
+          }
         </ul>
       </nav>
 

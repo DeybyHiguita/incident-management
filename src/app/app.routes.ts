@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
+import { roleGuard } from './core/guards/role-guard';
 
 /**
  * Rutas raíz de la aplicación.
@@ -31,6 +32,22 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () =>
       import('./features/incidents/incidents.routes').then((m) => m.INCIDENT_ROUTES),
+  },
+  {
+    // Ruta administrativa: además de sesión, exige el rol ADMIN.
+    // Los dos guards se ejecutan en orden y ambos deben dejar pasar.
+    path: 'admin',
+    title: 'Administración · Gestión de Incidencias',
+    canActivate: [authGuard, roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/admin/pages/admin-users/admin-users').then((m) => m.AdminUsers),
+  },
+  {
+    // Pública a propósito: es a donde manda `roleGuard` a quien sí ha
+    // entrado pero no tiene permiso.
+    path: 'forbidden',
+    title: 'Acceso denegado · Gestión de Incidencias',
+    loadComponent: () => import('./shared/pages/forbidden/forbidden').then((m) => m.Forbidden),
   },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   {

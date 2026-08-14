@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { routes } from './app.routes';
 import { INCIDENT_ROUTES } from './features/incidents/incidents.routes';
 import { AuthService } from './core/services/auth-service';
-import { prepareApi, provideTestApi, TEST_CREDENTIALS } from './testing/api-testing';
+import { CREDENTIALS_BY_ROLE, prepareApi, provideTestApi } from './testing/api-testing';
 import { IncidentNew } from './features/incidents/pages/incident-new/incident-new';
 import { IncidentEdit } from './features/incidents/pages/incident-edit/incident-edit';
 import { IncidentDetail } from './features/incidents/pages/incident-detail/incident-detail';
@@ -37,8 +37,11 @@ describe('rutas de la aplicación', () => {
   });
 
   /** Inicia sesión y navega, que es lo que hace un usuario real. */
-  async function goTo(commands: unknown[]): Promise<void> {
-    await firstValueFrom(TestBed.inject(AuthService).login(TEST_CREDENTIALS));
+  async function goTo(
+    commands: unknown[],
+    role: keyof typeof CREDENTIALS_BY_ROLE = 'ADMIN',
+  ): Promise<void> {
+    await firstValueFrom(TestBed.inject(AuthService).login(CREDENTIALS_BY_ROLE[role]));
     await router.navigate(commands as string[]);
   }
 
@@ -133,6 +136,60 @@ describe('rutas de la aplicación', () => {
     });
   });
 
+  describe('autorización por roles (Día 20)', () => {
+    it('un ADMIN entra en la administración', async () => {
+      await goTo(['/admin'], 'ADMIN');
+
+      expect(location.path()).toBe('/admin');
+    });
+
+    it('un AGENT no entra en la administración', async () => {
+      await goTo(['/admin'], 'AGENT');
+
+      expect(location.path()).toBe('/forbidden');
+    });
+
+    it('un REQUESTER tampoco', async () => {
+      await goTo(['/admin'], 'REQUESTER');
+
+      expect(location.path()).toBe('/forbidden');
+    });
+
+    it('sin sesión, la ruta administrativa manda al login y no a acceso denegado', async () => {
+      // Son negativas distintas: sin sesión sí se puede resolver entrando.
+      await router.navigate(['/admin']);
+
+      expect(location.path()).toContain('/login');
+      expect(location.path()).not.toContain('/forbidden');
+    });
+
+    it('un AGENT sí puede editar incidencias', async () => {
+      await goTo(['/incidents', 'inc-003', 'edit'], 'AGENT');
+
+      expect(location.path()).toBe('/incidents/inc-003/edit');
+    });
+
+    it('un REQUESTER no puede editar incidencias', async () => {
+      await goTo(['/incidents', 'inc-003', 'edit'], 'REQUESTER');
+
+      expect(location.path()).toBe('/forbidden');
+    });
+
+    it('un REQUESTER sí puede ver el detalle y registrar incidencias', async () => {
+      await goTo(['/incidents', 'inc-003'], 'REQUESTER');
+      expect(location.path()).toBe('/incidents/inc-003');
+
+      await router.navigate(['/incidents/new']);
+      expect(location.path()).toBe('/incidents/new');
+    });
+
+    it('la página de acceso denegado es accesible', async () => {
+      await goTo(['/forbidden'], 'REQUESTER');
+
+      expect(location.path()).toBe('/forbidden');
+    });
+  });
+
   describe('estructura', () => {
     it('la raíz delega las incidencias con loadChildren', () => {
       const incidents = routes.find((route) => route.path === 'incidents');
@@ -164,7 +221,8 @@ describe('rutas de la aplicación', () => {
     });
 
     it('todo lo privado está protegido por el guard', () => {
-      const publicPaths = ['login', '', '**'];
+      // `forbidden` es pública a propósito: es el destino de roleGuard.
+      const publicPaths = ['login', 'forbidden', '', '**'];
 
       for (const route of routes.filter((r) => !publicPaths.includes(r.path ?? ''))) {
         expect(route.canActivate)

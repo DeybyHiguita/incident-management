@@ -50,7 +50,8 @@ describe('Header', () => {
       const nav: HTMLElement = fixture.nativeElement.querySelector('nav');
 
       expect(nav.getAttribute('aria-label')).toBe('Navegación principal');
-      expect(nav.querySelectorAll('a').length).toBe(3);
+      // Cuatro para un ADMIN: panel, incidencias, nueva y administración.
+      expect(nav.querySelectorAll('a').length).toBe(4);
     });
 
     it('muestra el nombre del usuario autenticado', () => {
@@ -76,6 +77,10 @@ describe('Header', () => {
       expect(fixture.nativeElement.querySelector('#user-details')).toBeNull();
     });
 
+    it('un ADMIN ve el enlace de administración', () => {
+      expect(navLabels()).toContain('Administración');
+    });
+
     it('cierra la sesión y lleva al inicio de sesión', fakeAsync(() => {
       const router = TestBed.inject(Router);
       spyOn(router, 'navigate');
@@ -98,6 +103,29 @@ describe('Header', () => {
       expect(fixture.nativeElement.querySelector('nav')).toBeNull();
     }));
   });
+
+  describe('opciones según el rol (Día 20)', () => {
+    it('un AGENT no ve el enlace de administración', fakeAsync(() => {
+      loginForTest('AGENT');
+      fixture.detectChanges();
+
+      expect(navLabels()).toContain('Incidencias');
+      expect(navLabels()).not.toContain('Administración');
+    }));
+
+    it('un REQUESTER tampoco', fakeAsync(() => {
+      loginForTest('REQUESTER');
+      fixture.detectChanges();
+
+      expect(navLabels()).not.toContain('Administración');
+    }));
+  });
+
+  function navLabels(): string[] {
+    return Array.from<HTMLAnchorElement>(
+      fixture.nativeElement.querySelectorAll('.app-header-nav-link'),
+    ).map((link) => link.textContent?.trim() ?? '');
+  }
 
   function clickButton(label: string): void {
     Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'))
