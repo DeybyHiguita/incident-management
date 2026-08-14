@@ -13,9 +13,53 @@ export interface IncidentFilters {
   readonly search: string;
   readonly status: IncidentStatus | typeof ANY;
   readonly priority: IncidentPriority | typeof ANY;
+  readonly category: string;
 }
 
-const NO_FILTERS: IncidentFilters = { search: ANY, status: ANY, priority: ANY };
+const NO_FILTERS: IncidentFilters = {
+  search: ANY,
+  status: ANY,
+  priority: ANY,
+  category: ANY,
+};
+
+/** Campos por los que se puede ordenar. */
+export type SortField = 'createdAt' | 'priority';
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface IncidentSort {
+  readonly field: SortField;
+  readonly direction: SortDirection;
+}
+
+/** Por defecto, lo más reciente primero: es lo que se suele querer ver. */
+const DEFAULT_SORT: IncidentSort = { field: 'createdAt', direction: 'desc' };
+
+/**
+ * Peso de cada prioridad para poder ordenarlas.
+ *
+ * Alfabéticamente el orden sería CRITICAL, HIGH, LOW, MEDIUM, que no
+ * significa nada. Este mapa define el orden **de gravedad**, que es el que
+ * el usuario espera.
+ */
+const PRIORITY_RANK: Readonly<Record<IncidentPriority, number>> = {
+  LOW: 1,
+  MEDIUM: 2,
+  HIGH: 3,
+  CRITICAL: 4,
+};
+
+/**
+ * Incidencias por página.
+ *
+ * Cuatro es un número pequeño a propósito: con el conjunto de datos
+ * simulado (cinco incidencias) permite ver la paginación funcionando.
+ */
+export const DEFAULT_PAGE_SIZE = 4;
+
+/** Tamaños de página que puede elegir el usuario. */
+export const PAGE_SIZES = [4, 8, 12] as const;
 
 /**
  * Almacén de estado de incidencias.
@@ -49,6 +93,9 @@ export class IncidentStore {
   private readonly lastError = signal<string | null>(null);
   private readonly initialized = signal(false);
   private readonly activeFilters = signal<IncidentFilters>(NO_FILTERS);
+  private readonly activeSort = signal<IncidentSort>(DEFAULT_SORT);
+  private readonly currentPage = signal(1);
+  private readonly currentPageSize = signal<number>(DEFAULT_PAGE_SIZE);
   /** Resultados que devolvió el servidor para el término de búsqueda. */
   private readonly searchResults = signal<readonly Incident[]>([]);
 
@@ -58,6 +105,9 @@ export class IncidentStore {
 
   readonly incidents = this.incidentList.asReadonly();
   readonly filters = this.activeFilters.asReadonly();
+  readonly sort = this.activeSort.asReadonly();
+  readonly page = this.currentPage.asReadonly();
+  readonly pageSize = this.currentPageSize.asReadonly();
   readonly error = this.lastError.asReadonly();
   readonly loaded = this.initialized.asReadonly();
   readonly loading = this.loadingService.loading;
@@ -80,9 +130,22 @@ export class IncidentStore {
   );
 
   readonly hasActiveFilters = computed(() => {
-    const { search, status, priority } = this.activeFilters();
-    return search.trim() !== '' || status !== ANY || priority !== ANY;
+    const { search, status, priority, category } = this.activeFilters();
+    return search.trim() !== '' || status !== ANY || priority !== ANY || category !== ANY;
   });
+
+  /**
+   * Categorías disponibles, derivadas de las propias incidencias.
+   *
+   * No hay una lista maestra de categorías: se calculan de lo que hay. Así,
+   * al registrar una incidencia con una categoría nueva, aparece sola en el
+   * filtro.
+   */
+  readonly categories = computed(() =>
+    [...new Set(this.incidentList().map((incident) => incident.category))].sort((a, b) =>
+      a.localeCompare(b, 'es'),
+    ),
+  );
 
   /**
    * Lo que se pinta: los resultados de la búsqueda cruzados con la colección
@@ -93,19 +156,67 @@ export class IncidentStore {
    * colección hace que eliminar surta efecto sin repetir la búsqueda.
    */
   readonly visibleIncidents = computed(() => {
-    const { search, status, priority } = this.activeFilters();
+    const { search, status, priority, category } = this.activeFilters();
     const base = search.trim() ? this.searchResults() : this.incidentList();
     const alive = new Set(this.incidentList().map((incident) => incident.id));
 
-    return base.filter(
+    const filtered = base.filter(
       (incident) =>
         alive.has(incident.id) &&
         (status === ANY || incident.status === status) &&
-        (priority === ANY || incident.priority === priority),
+        (priority === ANY || incident.priority === priority) &&
+        (category === ANY || incident.category === category),
     );
+
+    return this.applySort(filtered);
   });
 
+  /** Número total de resultados que cumplen los filtros, sin paginar. */
   readonly visibleCount = computed(() => this.visibleIncidents().length);
+
+  // --- Paginación ----------------------------------------------------------
+
+  readonly totalPages = computed(() =>
+    // Siempre al menos una página, aunque no haya resultados: «página 1 de 1»
+    // se entiende mejor que «página 1 de 0».
+    Math.max(1, Math.ceil(this.visibleCount() / this.currentPageSize())),
+  );
+
+  /**
+   * Página efectiva.
+   *
+   * Se recorta contra el total en vez de corregir `currentPage` al filtrar:
+   * si el usuario está en la página 3 y un filtro deja una sola página,
+   * verá la 1 sin que haya hecho falta reaccionar a nada.
+   */
+  readonly currentPageNumber = computed(() =>
+    Math.min(Math.max(1, this.currentPage()), this.totalPages()),
+  );
+
+  /** Las incidencias de la página actual: esto es lo que se pinta. */
+  readonly pagedIncidents = computed(() => {
+    const size = this.currentPageSize();
+    const start = (this.currentPageNumber() - 1) * size;
+
+    return this.visibleIncidents().slice(start, start + size);
+  });
+
+  readonly hasPreviousPage = computed(() => this.currentPageNumber() > 1);
+  readonly hasNextPage = computed(() => this.currentPageNumber() < this.totalPages());
+
+  /** Rango mostrado, para el texto «mostrando 1–4 de 12». */
+  readonly pageRange = computed(() => {
+    const total = this.visibleCount();
+
+    if (total === 0) {
+      return { from: 0, to: 0 };
+    }
+
+    const size = this.currentPageSize();
+    const from = (this.currentPageNumber() - 1) * size + 1;
+
+    return { from, to: Math.min(from + size - 1, total) };
+  });
 
   constructor() {
     this.load();
@@ -190,13 +301,56 @@ export class IncidentStore {
     this.selectedIncidentId.set(null);
   }
 
-  /** Cambia uno o varios filtros, conservando el resto. */
+  /**
+   * Cambia uno o varios filtros, conservando el resto.
+   *
+   * Vuelve a la primera página: seguir en la página 3 tras cambiar un
+   * filtro es desconcertante, porque los resultados son otros.
+   */
   setFilters(changes: Partial<IncidentFilters>): void {
     this.activeFilters.update((current) => ({ ...current, ...changes }));
+    this.currentPage.set(1);
   }
 
   clearFilters(): void {
     this.activeFilters.set(NO_FILTERS);
+    this.currentPage.set(1);
+  }
+
+  /** Cambia el criterio de ordenación. También vuelve a la primera página. */
+  setSort(sort: IncidentSort): void {
+    this.activeSort.set(sort);
+    this.currentPage.set(1);
+  }
+
+  /**
+   * Ordena por un campo. Si ya se ordenaba por él, invierte la dirección —
+   * que es lo que espera quien pulsa dos veces la misma cabecera.
+   */
+  toggleSort(field: SortField): void {
+    this.activeSort.update((current) =>
+      current.field === field
+        ? { field, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+        : { field, direction: 'desc' },
+    );
+    this.currentPage.set(1);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage.set(Math.max(1, Math.min(page, this.totalPages())));
+  }
+
+  nextPage(): void {
+    this.goToPage(this.currentPageNumber() + 1);
+  }
+
+  previousPage(): void {
+    this.goToPage(this.currentPageNumber() - 1);
+  }
+
+  setPageSize(size: number): void {
+    this.currentPageSize.set(Math.max(1, size));
+    this.currentPage.set(1);
   }
 
   /** Guarda lo que devolvió el servidor para el término de búsqueda actual. */
@@ -231,6 +385,28 @@ export class IncidentStore {
     this.lastError.set(null);
 
     return source.pipe(tap({ error: (error: Error) => this.lastError.set(error.message) }));
+  }
+
+  /**
+   * Ordena una copia, nunca el arreglo recibido.
+   *
+   * `sort` muta en su sitio, así que ordenar directamente el resultado de
+   * un `computed` corrompería el estado del que deriva.
+   */
+  private applySort(incidents: readonly Incident[]): readonly Incident[] {
+    const { field, direction } = this.activeSort();
+    const factor = direction === 'asc' ? 1 : -1;
+
+    return [...incidents].sort((a, b) => {
+      const comparison =
+        field === 'priority'
+          ? PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]
+          : Date.parse(a.createdAt) - Date.parse(b.createdAt);
+
+      // Desempate estable por id: dos incidencias con la misma prioridad
+      // siempre salen en el mismo orden, sin bailes entre renders.
+      return comparison !== 0 ? comparison * factor : a.id.localeCompare(b.id);
+    });
   }
 
   /** Siguiente identificador correlativo (`inc-006`, `inc-007`, …). */

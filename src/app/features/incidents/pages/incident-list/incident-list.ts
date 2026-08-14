@@ -1,7 +1,7 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { UpperCasePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import {
   EMPTY,
   catchError,
@@ -16,7 +16,13 @@ import {
 } from 'rxjs';
 import { Incident, IncidentPriority, IncidentStatus } from '../../../../core/models/incident.model';
 import { IncidentApi } from '../../../../core/api/incident-api';
-import { ANY, IncidentStore } from '../../../../core/state/incident-store';
+import {
+  ANY,
+  IncidentStore,
+  PAGE_SIZES,
+  SortDirection,
+  SortField,
+} from '../../../../core/state/incident-store';
 import { IncidentCard } from '../../components/incident-card/incident-card';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
 import { IncidentHighlight } from '../../../../shared/directives/incident-highlight';
@@ -37,6 +43,8 @@ export class IncidentList {
   private readonly store = inject(IncidentStore);
   private readonly incidentApi = inject(IncidentApi);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   // --- Lectura del estado --------------------------------------------------
   //
@@ -52,6 +60,16 @@ export class IncidentList {
   protected readonly selectedId = this.store.selectedId;
   protected readonly selectedIncident = this.store.selectedIncident;
   protected readonly hasActiveFilters = this.store.hasActiveFilters;
+  protected readonly categories = this.store.categories;
+  protected readonly sort = this.store.sort;
+  protected readonly pagedIncidents = this.store.pagedIncidents;
+  protected readonly totalPages = this.store.totalPages;
+  protected readonly currentPageNumber = this.store.currentPageNumber;
+  protected readonly hasPreviousPage = this.store.hasPreviousPage;
+  protected readonly hasNextPage = this.store.hasNextPage;
+  protected readonly pageRange = this.store.pageRange;
+  protected readonly pageSize = this.store.pageSize;
+  protected readonly pageSizes = PAGE_SIZES;
   protected readonly filters = this.store.filters;
   protected readonly loading = this.store.loading;
   protected readonly error = this.store.error;
@@ -98,11 +116,80 @@ export class IncidentList {
   );
 
   constructor() {
+    // El orden importa: primero se aplica lo que traiga la URL, y solo
+    // después se empieza a escribirla.
+    this.applyFiltersFromUrl();
+
     // `toSignal` necesita que alguien lea la señal para que el flujo corra.
     this.search();
 
+    this.syncUrlWithState();
     this.startAutoRefresh();
     this.reloadWhenBackOnline();
+  }
+
+  // --- Sincronización con la URL -------------------------------------------
+  //
+  // Vive aquí y no en el store: el estado del dominio no debe saber que
+  // existe un enrutador. El store guarda filtros; la URL es una forma de
+  // presentarlos.
+
+  /** Lee los parámetros de consulta al entrar y los vuelca en el store. */
+  private applyFiltersFromUrl(): void {
+    const params = this.route.snapshot.queryParamMap;
+
+    this.store.setFilters({
+      search: params.get('q') ?? ANY,
+      status: (params.get('estado') ?? ANY) as IncidentStatus | typeof ANY,
+      priority: (params.get('prioridad') ?? ANY) as IncidentPriority | typeof ANY,
+      category: params.get('categoria') ?? ANY,
+    });
+
+    const field = params.get('orden') as SortField | null;
+    const direction = params.get('dir') as SortDirection | null;
+    if (field === 'createdAt' || field === 'priority') {
+      this.store.setSort({ field, direction: direction === 'asc' ? 'asc' : 'desc' });
+    }
+
+    const page = Number.parseInt(params.get('pagina') ?? '', 10);
+    if (Number.isFinite(page) && page > 0) {
+      this.store.goToPage(page);
+    }
+  }
+
+  /**
+   * Escribe el estado en la URL cada vez que cambia.
+   *
+   * Es un `effect` legítimo —de los que describía el Día 10—: no calcula un
+   * valor para la plantilla, sincroniza con algo que vive fuera del sistema
+   * reactivo, en este caso la barra de direcciones.
+   *
+   * `replaceUrl` evita llenar el historial: filtrar no debería obligar a
+   * pulsar «atrás» quince veces para salir de la pantalla.
+   */
+  private syncUrlWithState(): void {
+    effect(() => {
+      const { search, status, priority, category } = this.store.filters();
+      const { field, direction } = this.store.sort();
+      const page = this.store.currentPageNumber();
+
+      const queryParams: Params = {
+        q: search.trim() || null,
+        estado: status || null,
+        prioridad: priority || null,
+        categoria: category || null,
+        // Solo se escribe el orden si no es el de por defecto.
+        orden: field === 'createdAt' && direction === 'desc' ? null : field,
+        dir: field === 'createdAt' && direction === 'desc' ? null : direction,
+        pagina: page > 1 ? page : null,
+      };
+
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams,
+        replaceUrl: true,
+      });
+    });
   }
 
   // --- Acciones: siempre a través del store --------------------------------
@@ -119,8 +206,29 @@ export class IncidentList {
     this.store.setFilters({ priority: value as IncidentPriority | typeof ANY });
   }
 
+  protected onCategoryFilterChange(value: string): void {
+    this.store.setFilters({ category: value });
+  }
+
   protected clearFilters(): void {
     this.store.clearFilters();
+  }
+
+  protected onSortChange(value: string): void {
+    const [field, direction] = value.split(':') as [SortField, SortDirection];
+    this.store.setSort({ field, direction });
+  }
+
+  protected onPageSizeChange(value: string): void {
+    this.store.setPageSize(Number.parseInt(value, 10));
+  }
+
+  protected previousPage(): void {
+    this.store.previousPage();
+  }
+
+  protected nextPage(): void {
+    this.store.nextPage();
   }
 
   protected onIncidentSelected(incident: Incident): void {

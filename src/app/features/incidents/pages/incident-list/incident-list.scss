@@ -105,6 +105,32 @@
   }
 }
 
+/* Paginación. */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+
+  &-status {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-size {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    /* Se separa de los controles de navegación: es una preferencia. */
+    margin-inline-start: auto;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+}
+
 /* Búsqueda y filtros. */
 .filters {
   display: flex;

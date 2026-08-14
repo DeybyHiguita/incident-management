@@ -110,13 +110,56 @@
       </select>
     </div>
 
+    <div class="filters-field">
+      <label class="filters-label" for="category-filter">Categoría</label>
+      <!-- La selección se marca en cada <option> y no con [value] en el
+           <select>: las categorías se derivan de los datos, que llegan por
+           HTTP después de montarse el control. Con [value], la opción aún
+           no existía al asignarlo y el desplegable quedaba en blanco pese a
+           estar el filtro aplicado. -->
+      <select
+        class="filters-control"
+        id="category-filter"
+        (change)="onCategoryFilterChange($any($event.target).value)"
+      >
+        <option value="" [selected]="filters().category === ''">Todas</option>
+        @for (category of categories(); track category) {
+          <option [value]="category" [selected]="category === filters().category">
+            {{ category }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="filters-field">
+      <label class="filters-label" for="sort-order">Ordenar por</label>
+      <select
+        class="filters-control"
+        id="sort-order"
+        [value]="sort().field + ':' + sort().direction"
+        (change)="onSortChange($any($event.target).value)"
+      >
+        <option value="createdAt:desc">Más recientes primero</option>
+        <option value="createdAt:asc">Más antiguas primero</option>
+        <option value="priority:desc">Prioridad: mayor a menor</option>
+        <option value="priority:asc">Prioridad: menor a mayor</option>
+      </select>
+    </div>
+
     <button type="button" class="btn" [disabled]="!hasActiveFilters()" (click)="clearFilters()">
       Limpiar filtros
     </button>
   </div>
 
   <p class="incident-list-count" aria-live="polite">
-    Mostrando {{ visibleCount() }} de {{ totalCount() }} incidencias.
+    @if (visibleCount() === 0) {
+      Ningún resultado de {{ totalCount() }} incidencias.
+    } @else {
+      Mostrando {{ pageRange().from }}–{{ pageRange().to }} de {{ visibleCount() }} resultados
+      @if (visibleCount() !== totalCount()) {
+        (filtrados de {{ totalCount() }})
+      }.
+    }
   </p>
 
   <p
@@ -133,7 +176,7 @@
   </p>
 
   <ul class="incident-list-grid">
-    @for (incident of visibleIncidents(); track incident.id) {
+    @for (incident of pagedIncidents(); track incident.id) {
       <li class="incident-list-item">
         <!-- La ruta la construye el contenedor: la tarjeta sigue sin saber
              nada del enrutador ni de las direcciones de la aplicación. -->
@@ -157,4 +200,40 @@
       </li>
     }
   </ul>
+
+  <!-- La paginación solo aparece si hay algo que paginar. -->
+  @if (totalPages() > 1 || visibleCount() > pageSizes[0]) {
+    <nav class="pager" aria-label="Paginación de resultados">
+      <button
+        type="button"
+        class="btn"
+        [disabled]="!hasPreviousPage()"
+        (click)="previousPage()"
+      >
+        Anterior
+      </button>
+
+      <span class="pager-status" aria-live="polite">
+        Página {{ currentPageNumber() }} de {{ totalPages() }}
+      </span>
+
+      <button type="button" class="btn" [disabled]="!hasNextPage()" (click)="nextPage()">
+        Siguiente
+      </button>
+
+      <label class="pager-size" for="page-size">
+        Por página
+        <select
+          class="filters-control"
+          id="page-size"
+          [value]="pageSize()"
+          (change)="onPageSizeChange($any($event.target).value)"
+        >
+          @for (size of pageSizes; track size) {
+            <option [value]="size">{{ size }}</option>
+          }
+        </select>
+      </label>
+    </nav>
+  }
 </section>

@@ -333,7 +333,12 @@ describe('IncidentStore', () => {
       store.setFilters({ status: 'OPEN' });
       store.setFilters({ priority: 'HIGH' });
 
-      expect(store.filters()).toEqual({ search: '', status: 'OPEN', priority: 'HIGH' });
+      expect(store.filters()).toEqual({
+        search: '',
+        status: 'OPEN',
+        priority: 'HIGH',
+        category: '',
+      });
     });
 
     it('filtra la lista visible sin tocar la colección', () => {
@@ -352,6 +357,180 @@ describe('IncidentStore', () => {
 
       expect(store.hasActiveFilters()).toBe(false);
       expect(store.visibleCount()).toBe(MOCK_INCIDENTS.length);
+    });
+  });
+
+  describe('filtro por categoría (Día 22)', () => {
+    beforeEach(fakeAsync(() => start()));
+
+    it('deriva las categorías de las propias incidencias, sin repetir y ordenadas', () => {
+      const expected = [...new Set(MOCK_INCIDENTS.map((i) => i.category))].sort((a, b) =>
+        a.localeCompare(b, 'es'),
+      );
+
+      expect(store.categories()).toEqual(expected);
+    });
+
+    it('filtra por categoría', () => {
+      store.setFilters({ category: 'Hardware' });
+
+      expect(store.visibleCount()).toBe(
+        MOCK_INCIDENTS.filter((i) => i.category === 'Hardware').length,
+      );
+    });
+
+    it('una categoría nueva aparece sola al registrarla', fakeAsync(() => {
+      store
+        .create({
+          title: 'Ruido en el aire acondicionado',
+          description: 'Se oye desde toda la planta.',
+          category: 'Climatización',
+          priority: 'LOW',
+          reporterId: 'u-005',
+        })
+        .subscribe();
+      tick();
+
+      expect(store.categories()).toContain('Climatización');
+    }));
+  });
+
+  describe('ordenamiento (Día 22)', () => {
+    beforeEach(fakeAsync(() => start()));
+
+    it('por defecto muestra lo más reciente primero', () => {
+      const dates = store.visibleIncidents().map((i) => Date.parse(i.createdAt));
+
+      expect(dates).toEqual([...dates].sort((a, b) => b - a));
+    });
+
+    it('ordena por fecha ascendente', () => {
+      store.setSort({ field: 'createdAt', direction: 'asc' });
+
+      const dates = store.visibleIncidents().map((i) => Date.parse(i.createdAt));
+      expect(dates).toEqual([...dates].sort((a, b) => a - b));
+    });
+
+    it('ordena por prioridad de mayor a menor gravedad, no alfabéticamente', () => {
+      store.setSort({ field: 'priority', direction: 'desc' });
+
+      // Alfabéticamente CRITICAL iría antes que HIGH, pero LOW antes que
+      // MEDIUM: lo que se comprueba es el orden de gravedad.
+      const rank = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
+      const ranks = store.visibleIncidents().map((i) => rank[i.priority]);
+
+      expect(ranks).toEqual([...ranks].sort((a, b) => b - a));
+      expect(store.visibleIncidents()[0].priority).toBe('CRITICAL');
+    });
+
+    it('toggleSort invierte la dirección si ya se ordena por ese campo', () => {
+      store.setSort({ field: 'priority', direction: 'desc' });
+
+      store.toggleSort('priority');
+
+      expect(store.sort()).toEqual({ field: 'priority', direction: 'asc' });
+    });
+
+    it('toggleSort con otro campo empieza descendente', () => {
+      store.setSort({ field: 'priority', direction: 'asc' });
+
+      store.toggleSort('createdAt');
+
+      expect(store.sort()).toEqual({ field: 'createdAt', direction: 'desc' });
+    });
+
+    it('no muta la colección al ordenar', () => {
+      const before = store.getAll().map((i) => i.id);
+
+      store.setSort({ field: 'priority', direction: 'asc' });
+      store.visibleIncidents();
+
+      expect(store.getAll().map((i) => i.id)).toEqual(before);
+    });
+  });
+
+  describe('paginación (Día 22)', () => {
+    beforeEach(fakeAsync(() => start()));
+
+    it('reparte los resultados en páginas del tamaño configurado', () => {
+      expect(store.pageSize()).toBe(4);
+      expect(store.pagedIncidents().length).toBe(4);
+      expect(store.totalPages()).toBe(2); // 5 incidencias en páginas de 4
+    });
+
+    it('la página siguiente muestra el resto', () => {
+      store.nextPage();
+
+      expect(store.currentPageNumber()).toBe(2);
+      expect(store.pagedIncidents().length).toBe(MOCK_INCIDENTS.length - 4);
+    });
+
+    it('no se puede pasar de la última página ni bajar de la primera', () => {
+      store.goToPage(99);
+      expect(store.currentPageNumber()).toBe(store.totalPages());
+      expect(store.hasNextPage()).toBe(false);
+
+      store.goToPage(-5);
+      expect(store.currentPageNumber()).toBe(1);
+      expect(store.hasPreviousPage()).toBe(false);
+    });
+
+    it('ninguna incidencia se repite ni se pierde entre páginas', () => {
+      const first = store.pagedIncidents().map((i) => i.id);
+      store.nextPage();
+      const second = store.pagedIncidents().map((i) => i.id);
+
+      const all = [...first, ...second];
+      expect(new Set(all).size).toBe(MOCK_INCIDENTS.length);
+    });
+
+    it('cambiar un filtro vuelve a la primera página', () => {
+      store.nextPage();
+      expect(store.currentPageNumber()).toBe(2);
+
+      store.setFilters({ status: 'OPEN' });
+
+      expect(store.currentPageNumber()).toBe(1);
+    });
+
+    it('ordenar también vuelve a la primera página', () => {
+      store.nextPage();
+
+      store.setSort({ field: 'priority', direction: 'asc' });
+
+      expect(store.currentPageNumber()).toBe(1);
+    });
+
+    it('si un filtro deja menos páginas, la actual se recorta sola', () => {
+      store.nextPage();
+      // Se filtra a un solo resultado: la página 2 deja de existir.
+      store.setFilters({ priority: 'CRITICAL' });
+
+      expect(store.totalPages()).toBe(1);
+      expect(store.currentPageNumber()).toBe(1);
+    });
+
+    it('con un tamaño mayor cabe todo en una página', () => {
+      store.setPageSize(12);
+
+      expect(store.totalPages()).toBe(1);
+      expect(store.pagedIncidents().length).toBe(MOCK_INCIDENTS.length);
+    });
+
+    it('informa del rango mostrado', () => {
+      expect(store.pageRange()).toEqual({ from: 1, to: 4 });
+
+      store.nextPage();
+
+      expect(store.pageRange()).toEqual({ from: 5, to: 5 });
+    });
+
+    it('sin resultados, el rango es cero y sigue habiendo una página', () => {
+      store.setFilters({ category: 'No existe esta categoría' });
+
+      expect(store.visibleCount()).toBe(0);
+      expect(store.pageRange()).toEqual({ from: 0, to: 0 });
+      expect(store.totalPages()).toBe(1);
     });
   });
 

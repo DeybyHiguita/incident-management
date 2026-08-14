@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { loadIncidents, prepareApi, provideTestApi } from '../../../../testing/api-testing';
 import { IncidentApi } from '../../../../core/api/incident-api';
 import {
@@ -37,6 +37,9 @@ describe('IncidentList', () => {
     // respuesta antes de renderizar.
     store = loadIncidents();
     api = TestBed.inject(IncidentApi);
+    // El Día 22 introdujo paginación y orden por fecha. Las pruebas que no
+    // van de eso se aíslan: caben todas las incidencias en una página.
+    store.setPageSize(50);
 
     fixture = TestBed.createComponent(IncidentList);
     component = fixture.componentInstance;
@@ -52,16 +55,16 @@ describe('IncidentList', () => {
   });
 
   it('marca la tarjeta como seleccionada cuando el hijo emite el evento', fakeAsync(() => {
-    clickIn(cards()[1], 'Seleccionar');
+    clickIn(cardOf(MOCK_INCIDENTS[1]), 'Seleccionar');
 
     expect(text()).toContain(MOCK_INCIDENTS[1].title);
-    expect(cards()[1].querySelector('.incident-card--selected')).toBeTruthy();
+    expect(cardOf(MOCK_INCIDENTS[1]).querySelector('.incident-card--selected')).toBeTruthy();
   }));
 
   it('elimina la incidencia del contenedor cuando el hijo lo solicita', fakeAsync(() => {
     const removed = MOCK_INCIDENTS[0];
 
-    clickIn(cards()[0], 'Eliminar incidencia');
+    clickIn(cardOf(MOCK_INCIDENTS[0]), 'Eliminar incidencia');
 
     expect(cards().length).toBe(MOCK_INCIDENTS.length - 1);
     expect(text()).not.toContain(removed.title);
@@ -70,7 +73,7 @@ describe('IncidentList', () => {
   it('no muta la colección original al eliminar (inmutabilidad)', fakeAsync(() => {
     const snapshot = [...MOCK_INCIDENTS];
 
-    clickIn(cards()[0], 'Eliminar incidencia');
+    clickIn(cardOf(MOCK_INCIDENTS[0]), 'Eliminar incidencia');
 
     expect(MOCK_INCIDENTS).toEqual(snapshot);
   }));
@@ -78,7 +81,7 @@ describe('IncidentList', () => {
   it('delega la eliminación en el servicio en vez de gestionar los datos', fakeAsync(() => {
     spyOn(store, 'remove').and.callThrough();
 
-    clickIn(cards()[0], 'Eliminar incidencia');
+    clickIn(cardOf(MOCK_INCIDENTS[0]), 'Eliminar incidencia');
 
     expect(store.remove).toHaveBeenCalledWith(MOCK_INCIDENTS[0].id);
   }));
@@ -95,6 +98,7 @@ describe('IncidentList', () => {
   }));
 
   it('muestra el estado vacío al eliminar todas y permite restaurar', fakeAsync(() => {
+    // Aquí sí se usa la primera disponible: se van vaciando todas.
     while (cards().length > 0) {
       clickIn(cards()[0], 'Eliminar incidencia');
     }
@@ -138,7 +142,7 @@ describe('IncidentList', () => {
 
     expect(live.textContent).toContain('Ninguna incidencia seleccionada');
 
-    clickIn(cards()[0], 'Seleccionar');
+    clickIn(cardOf(MOCK_INCIDENTS[0]), 'Seleccionar');
 
     expect(live.textContent).toContain(MOCK_INCIDENTS[0].title);
   }));
@@ -319,7 +323,9 @@ describe('IncidentList', () => {
       select('#priority-filter', 'CRITICAL');
 
       const critical = MOCK_INCIDENTS.filter((i) => i.priority === 'CRITICAL').length;
-      expect(counter()).toContain(`Mostrando ${critical} de ${MOCK_INCIDENTS.length}`);
+      // El contador informa del rango y del total filtrado (Día 22).
+      expect(counter()).toContain(`de ${critical} resultados`);
+      expect(counter()).toContain(`filtrados de ${MOCK_INCIDENTS.length}`);
       expect(stat('Totales')).toBe(String(MOCK_INCIDENTS.length));
       finish();
     }));
@@ -443,7 +449,7 @@ describe('IncidentList', () => {
     setFakeBackendLatency(50);
     const before = store.getAll().length;
 
-    findIn(cards()[0], 'Eliminar incidencia').click();
+    findIn(cardOf(MOCK_INCIDENTS[0]), 'Eliminar incidencia').click();
     fixture.destroy();
     tick(100);
 
@@ -520,6 +526,159 @@ describe('IncidentList', () => {
     field.value = value;
     field.dispatchEvent(new Event('change'));
     fixture.detectChanges();
+  }
+
+  // --- Día 22: paginación, orden y sincronización con la URL ---------------
+
+  describe('paginación en la interfaz', () => {
+    beforeEach(fakeAsync(() => {
+      // Se restaura el tamaño real para probar la paginación de verdad.
+      store.setPageSize(4);
+      fixture.detectChanges();
+      finish();
+    }));
+
+    it('muestra solo las incidencias de la página actual', () => {
+      expect(cards().length).toBe(4);
+      expect(pagerStatus()).toContain('Página 1 de 2');
+    });
+
+    it('la página siguiente muestra el resto', fakeAsync(() => {
+      clickIn(fixture.nativeElement, 'Siguiente');
+
+      expect(cards().length).toBe(MOCK_INCIDENTS.length - 4);
+      expect(pagerStatus()).toContain('Página 2 de 2');
+      finish();
+    }));
+
+    it('deshabilita los controles en los extremos', fakeAsync(() => {
+      expect(findIn(fixture.nativeElement, 'Anterior').disabled).toBe(true);
+      expect(findIn(fixture.nativeElement, 'Siguiente').disabled).toBe(false);
+
+      clickIn(fixture.nativeElement, 'Siguiente');
+
+      expect(findIn(fixture.nativeElement, 'Anterior').disabled).toBe(false);
+      expect(findIn(fixture.nativeElement, 'Siguiente').disabled).toBe(true);
+      finish();
+    }));
+
+    it('con un tamaño de página mayor desaparece la segunda página', fakeAsync(() => {
+      select('#page-size', '12');
+
+      expect(cards().length).toBe(MOCK_INCIDENTS.length);
+      expect(pagerStatus()).toContain('Página 1 de 1');
+      finish();
+    }));
+
+    it('informa del rango mostrado', () => {
+      expect(counter()).toContain('Mostrando 1–4 de 5 resultados');
+    });
+  });
+
+  describe('ordenamiento en la interfaz', () => {
+    it('ordena por prioridad al elegirlo', fakeAsync(() => {
+      select('#sort-order', 'priority:desc');
+
+      expect(cards()[0].textContent).toContain('Caída del servidor de facturación');
+      finish();
+    }));
+
+    it('el selector refleja el orden activo', fakeAsync(() => {
+      select('#sort-order', 'createdAt:asc');
+
+      expect(input('#sort-order').value).toBe('createdAt:asc');
+      finish();
+    }));
+  });
+
+  describe('filtro por categoría en la interfaz', () => {
+    it('ofrece las categorías existentes', () => {
+      const options = Array.from<HTMLOptionElement>(
+        fixture.nativeElement.querySelectorAll('#category-filter option'),
+      ).map((option) => option.textContent?.trim());
+
+      expect(options).toContain('Hardware');
+      expect(options).toContain('Autenticación');
+    });
+
+    it('filtra al elegir una', fakeAsync(() => {
+      select('#category-filter', 'Hardware');
+
+      expect(cards().length).toBe(
+        MOCK_INCIDENTS.filter((i) => i.category === 'Hardware').length,
+      );
+      finish();
+    }));
+
+    it('el desplegable refleja la categoría filtrada aunque llegue del estado', fakeAsync(() => {
+      // Reproduce el fallo encontrado al restaurar filtros desde la URL: el
+      // filtro se aplicaba pero el control aparecía en blanco, porque las
+      // opciones se crean con los datos que llegan por HTTP.
+      store.setFilters({ category: 'Hardware' });
+      fixture.detectChanges();
+
+      expect(input('#category-filter').value).toBe('Hardware');
+      finish();
+    }));
+  });
+
+  describe('sincronización con la URL', () => {
+    it('escribe los filtros en los parámetros de consulta', fakeAsync(() => {
+      select('#status-filter', 'OPEN');
+      select('#category-filter', 'Hardware');
+      finish();
+
+      const params = currentQueryParams();
+      expect(params['estado']).toBe('OPEN');
+      expect(params['categoria']).toBe('Hardware');
+    }));
+
+    it('no ensucia la URL con los valores por defecto', fakeAsync(() => {
+      finish();
+
+      const params = currentQueryParams();
+      // Sin filtros ni orden distinto del de por defecto, la URL va limpia.
+      expect(params['estado']).toBeFalsy();
+      expect(params['orden']).toBeFalsy();
+      expect(params['pagina']).toBeFalsy();
+    }));
+
+    it('escribe el orden solo cuando no es el de por defecto', fakeAsync(() => {
+      select('#sort-order', 'priority:asc');
+      finish();
+
+      expect(currentQueryParams()['orden']).toBe('priority');
+      expect(currentQueryParams()['dir']).toBe('asc');
+    }));
+
+    it('escribe la página a partir de la segunda', fakeAsync(() => {
+      store.setPageSize(4);
+      fixture.detectChanges();
+      clickIn(fixture.nativeElement, 'Siguiente');
+      finish();
+
+      // Los parámetros de consulta siempre son cadenas.
+      expect(currentQueryParams()['pagina']).toBe('2');
+    }));
+
+    function currentQueryParams(): Record<string, unknown> {
+      return TestBed.inject(Router).routerState.snapshot.root.queryParams;
+    }
+  });
+
+  function pagerStatus(): string {
+    return fixture.nativeElement.querySelector('.pager-status')?.textContent ?? '';
+  }
+
+  /** Tarjeta de una incidencia concreta, sin depender del orden. */
+  function cardOf(incident: { title: string }): HTMLElement {
+    const card = cards().find((candidate) => candidate.textContent?.includes(incident.title));
+
+    if (!card) {
+      throw new Error(`No se encontró la tarjeta de "${incident.title}"`);
+    }
+
+    return card;
   }
 
   function cards(): HTMLElement[] {
