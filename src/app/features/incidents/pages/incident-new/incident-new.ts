@@ -4,10 +4,11 @@ import { Router, RouterLink } from '@angular/router';
 import { IncidentStore } from '../../../../core/state/incident-store';
 import { UserService } from '../../../../core/services/user-service';
 import { IncidentForm, IncidentFormValue } from '../../components/incident-form/incident-form';
+import { LoadingIndicator } from '../../../../shared/components/loading-indicator/loading-indicator';
 
 @Component({
   selector: 'app-incident-new',
-  imports: [IncidentForm, RouterLink],
+  imports: [IncidentForm, RouterLink, LoadingIndicator],
   templateUrl: './incident-new.html',
   styleUrl: './incident-new.scss',
 })

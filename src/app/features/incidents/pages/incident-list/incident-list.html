@@ -23,10 +23,7 @@
 
   <!-- Indicador de carga. `aria-live` lo anuncia sin robar el foco. -->
   @if (loading()) {
-    <p class="loading" role="status">
-      <span class="loading-spinner" aria-hidden="true"></span>
-      Cargando incidencias…
-    </p>
+    <app-loading-indicator message="Cargando incidencias…" />
   }
 
   <!-- `role="alert"` sí interrumpe: un fallo merece la atención inmediata. -->
@@ -191,15 +188,41 @@
     } @empty {
       <li class="incident-list-empty">
         @if (!loaded()) {
-          Cargando…
+          <app-loading-indicator />
         } @else if (hasActiveFilters()) {
-          Ninguna incidencia coincide con los filtros aplicados.
+          <app-empty-state
+            message="Ninguna incidencia coincide con los filtros aplicados."
+            hint="Prueba a quitar alguno para ver más resultados."
+          >
+            <button type="button" class="btn" (click)="clearFilters()">Limpiar filtros</button>
+          </app-empty-state>
         } @else {
-          No hay incidencias registradas.
+          <app-empty-state
+            message="No hay incidencias registradas."
+            hint="Cuando se registre la primera, aparecerá aquí."
+          >
+            <a class="btn btn--primary" routerLink="/incidents/new">Registrar incidencia</a>
+          </app-empty-state>
         }
       </li>
     }
   </ul>
+
+  <!-- Eliminar es irreversible: se confirma antes. El diálogo nombra la
+       incidencia concreta para que no haya dudas de cuál se borra. -->
+  <app-confirm-dialog
+    [open]="pendingDeletion() !== null"
+    title="Eliminar incidencia"
+    [message]="
+      '¿Seguro que quieres eliminar «' +
+      (pendingDeletion()?.title ?? '') +
+      '»? Esta acción no se puede deshacer.'
+    "
+    confirmLabel="Eliminar"
+    [destructive]="true"
+    (confirmed)="confirmDeletion()"
+    (cancelled)="cancelDeletion()"
+  />
 
   <!-- La paginación solo aparece si hay algo que paginar. -->
   @if (totalPages() > 1 || visibleCount() > pageSizes[0]) {

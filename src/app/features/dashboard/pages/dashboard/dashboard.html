@@ -32,7 +32,9 @@
         </span>
       </li>
     } @empty {
-      <li class="dashboard-critical-empty">No hay incidencias críticas ahora mismo.</li>
+      <li>
+        <app-empty-state message="No hay incidencias críticas ahora mismo." />
+      </li>
     }
   </ul>
 </section>

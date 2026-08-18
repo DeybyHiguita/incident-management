@@ -24,6 +24,9 @@ import {
   SortField,
 } from '../../../../core/state/incident-store';
 import { IncidentCard } from '../../components/incident-card/incident-card';
+import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
+import { EmptyState } from '../../../../shared/components/empty-state/empty-state';
+import { LoadingIndicator } from '../../../../shared/components/loading-indicator/loading-indicator';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
 import { IncidentHighlight } from '../../../../shared/directives/incident-highlight';
 
@@ -35,7 +38,16 @@ const AUTO_REFRESH_MS = 30_000;
 
 @Component({
   selector: 'app-incident-list',
-  imports: [IncidentCard, UpperCasePipe, IncidentPriorityPipe, IncidentHighlight, RouterLink],
+  imports: [
+    IncidentCard,
+    ConfirmDialog,
+    EmptyState,
+    LoadingIndicator,
+    UpperCasePipe,
+    IncidentPriorityPipe,
+    IncidentHighlight,
+    RouterLink,
+  ],
   templateUrl: './incident-list.html',
   styleUrl: './incident-list.scss',
 })
@@ -79,6 +91,14 @@ export class IncidentList {
   protected readonly searching = signal(false);
   protected readonly searchError = signal<string | null>(null);
   protected readonly autoRefresh = signal(false);
+
+  /**
+   * Incidencia pendiente de confirmar su eliminación.
+   *
+   * Guardar la incidencia entera —y no solo un booleano— permite nombrarla
+   * en el diálogo, que es lo que evita borrar la que no era.
+   */
+  protected readonly pendingDeletion = signal<Incident | null>(null);
 
   // --- Búsqueda reactiva ---------------------------------------------------
 
@@ -235,11 +255,27 @@ export class IncidentList {
     this.store.select(incident.id);
   }
 
+  /** El hijo pide eliminar; aquí solo se abre la confirmación. */
   protected onDeleteRequested(incident: Incident): void {
+    this.pendingDeletion.set(incident);
+  }
+
+  protected confirmDeletion(): void {
+    const incident = this.pendingDeletion();
+
+    if (!incident) {
+      return;
+    }
+
+    this.pendingDeletion.set(null);
     this.store
       .remove(incident.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ error: () => undefined });
+  }
+
+  protected cancelDeletion(): void {
+    this.pendingDeletion.set(null);
   }
 
   protected reload(): void {

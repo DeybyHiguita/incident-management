@@ -46,6 +46,13 @@ describe('IncidentList', () => {
     fixture.detectChanges();
   }));
 
+  // Ningún diálogo puede quedar abierto entre pruebas: atraparía el foco.
+  afterEach(() => {
+    for (const element of Array.from(document.querySelectorAll('dialog'))) {
+      (element as HTMLDialogElement).close();
+    }
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -64,7 +71,7 @@ describe('IncidentList', () => {
   it('elimina la incidencia del contenedor cuando el hijo lo solicita', fakeAsync(() => {
     const removed = MOCK_INCIDENTS[0];
 
-    clickIn(cardOf(MOCK_INCIDENTS[0]), 'Eliminar incidencia');
+    deleteIncident(cardOf(MOCK_INCIDENTS[0]));
 
     expect(cards().length).toBe(MOCK_INCIDENTS.length - 1);
     expect(text()).not.toContain(removed.title);
@@ -73,7 +80,7 @@ describe('IncidentList', () => {
   it('no muta la colección original al eliminar (inmutabilidad)', fakeAsync(() => {
     const snapshot = [...MOCK_INCIDENTS];
 
-    clickIn(cardOf(MOCK_INCIDENTS[0]), 'Eliminar incidencia');
+    deleteIncident(cardOf(MOCK_INCIDENTS[0]));
 
     expect(MOCK_INCIDENTS).toEqual(snapshot);
   }));
@@ -81,7 +88,7 @@ describe('IncidentList', () => {
   it('delega la eliminación en el servicio en vez de gestionar los datos', fakeAsync(() => {
     spyOn(store, 'remove').and.callThrough();
 
-    clickIn(cardOf(MOCK_INCIDENTS[0]), 'Eliminar incidencia');
+    deleteIncident(cardOf(MOCK_INCIDENTS[0]));
 
     expect(store.remove).toHaveBeenCalledWith(MOCK_INCIDENTS[0].id);
   }));
@@ -100,7 +107,7 @@ describe('IncidentList', () => {
   it('muestra el estado vacío al eliminar todas y permite restaurar', fakeAsync(() => {
     // Aquí sí se usa la primera disponible: se van vaciando todas.
     while (cards().length > 0) {
-      clickIn(cards()[0], 'Eliminar incidencia');
+      deleteIncident(cards()[0]);
     }
 
     expect(text()).toContain('No hay incidencias registradas.');
@@ -668,6 +675,24 @@ describe('IncidentList', () => {
 
   function pagerStatus(): string {
     return fixture.nativeElement.querySelector('.pager-status')?.textContent ?? '';
+  }
+
+  /**
+   * Elimina una incidencia recorriendo el flujo real: pedirlo en la tarjeta
+   * y confirmarlo en el diálogo (Día 23).
+   */
+  function deleteIncident(card: HTMLElement): void {
+    findIn(card, 'Eliminar incidencia').click();
+    fixture.detectChanges();
+
+    // La confirmación se busca **dentro del diálogo**: en la página hay
+    // otros botones cuyo nombre empieza por «Eliminar» (los de cada
+    // tarjeta), y buscarlos por prefijo en todo el documento devolvía el de
+    // la tarjeta, así que nunca se confirmaba nada.
+    const dialog: HTMLElement = fixture.nativeElement.querySelector('dialog');
+    findIn(dialog, 'Eliminar').click();
+    tick();
+    fixture.detectChanges();
   }
 
   /** Tarjeta de una incidencia concreta, sin depender del orden. */

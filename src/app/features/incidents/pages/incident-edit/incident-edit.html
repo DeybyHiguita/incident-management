@@ -15,10 +15,7 @@
     }
 
     @if (loading()) {
-      <p class="loading" role="status">
-        <span class="loading-spinner" aria-hidden="true"></span>
-        Guardando…
-      </p>
+      <app-loading-indicator message="Guardando…" />
     }
 
     <app-incident-form

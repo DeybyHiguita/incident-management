@@ -1,0 +1,20 @@
+<app-modal [open]="open()" [closeLabel]="cancelLabel()" (closed)="onCancel()">
+  <span modalTitle>{{ title() }}</span>
+
+  @if (message()) {
+    <p class="confirm-message">{{ message() }}</p>
+  }
+
+  <ng-container modalActions>
+    <button type="button" class="btn" (click)="onCancel()">{{ cancelLabel() }}</button>
+    <button
+      type="button"
+      class="btn"
+      [class.btn--danger]="destructive()"
+      [class.btn--primary]="!destructive()"
+      (click)="onConfirm()"
+    >
+      {{ confirmLabel() }}
+    </button>
+  </ng-container>
+</app-modal>

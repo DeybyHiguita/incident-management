@@ -1,0 +1,10 @@
+<div class="empty-state">
+  <p class="empty-state-message">{{ message() }}</p>
+
+  @if (hint()) {
+    <p class="empty-state-hint">{{ hint() }}</p>
+  }
+
+  <!-- Ranura para una acción opcional: el componente no la conoce. -->
+  <ng-content />
+</div>

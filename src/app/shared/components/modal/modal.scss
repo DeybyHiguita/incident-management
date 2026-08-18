@@ -1,0 +1,56 @@
+.modal {
+  /* El <dialog> nativo trae márgenes y borde propios: se limpian. */
+  max-width: min(32rem, calc(100vw - var(--space-5)));
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+
+  &::backdrop {
+    background-color: rgb(15 23 42 / 45%);
+  }
+
+  &-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+  }
+
+  &-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  &-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    overflow-wrap: anywhere;
+  }
+
+  &-close {
+    /* El aspa necesita algo más de cuerpo para pulsarse cómodamente. */
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  &-body {
+    color: var(--color-text-muted);
+  }
+
+  &-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+
+    /* Sin acciones proyectadas no debe dejar un hueco. */
+    &:empty {
+      display: none;
+    }
+  }
+}

@@ -1,12 +1,13 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IncidentStore } from '../../../../core/state/incident-store';
+import { EmptyState } from '../../../../shared/components/empty-state/empty-state';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
 import { IncidentHighlight } from '../../../../shared/directives/incident-highlight';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, IncidentPriorityPipe, IncidentHighlight],
+  imports: [RouterLink, EmptyState, IncidentPriorityPipe, IncidentHighlight],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

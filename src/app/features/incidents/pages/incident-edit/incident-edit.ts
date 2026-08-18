@@ -3,10 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { IncidentStore } from '../../../../core/state/incident-store';
 import { IncidentForm, IncidentFormValue } from '../../components/incident-form/incident-form';
+import { LoadingIndicator } from '../../../../shared/components/loading-indicator/loading-indicator';
 
 @Component({
   selector: 'app-incident-edit',
-  imports: [IncidentForm, RouterLink],
+  imports: [IncidentForm, RouterLink, LoadingIndicator],
   templateUrl: './incident-edit.html',
   styleUrl: './incident-edit.scss',
 })
