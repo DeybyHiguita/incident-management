@@ -9,17 +9,96 @@
 ## 1. Punto de partida: casi todo ya estaba
 
 Las seis primeras actividades del día piden probar cosas que se fueron
-probando el mismo día que se construyeron. La comprobación, archivo por
-archivo:
+probando el mismo día que se construyeron. La comprobación, prueba a
+prueba:
 
-| Actividad | Dónde está |
+### 1. Probar la creación de una incidencia
+
+| Prueba | Dónde |
 |---|---|
-| 1. Creación de una incidencia | `incident-store.spec.ts`, `incident-new.spec.ts` |
-| 2. Eliminación | `incident-store.spec.ts`, `incident-list.spec.ts` |
-| 3. Un selector del store | `incident-store.spec.ts` (indicadores, filtros, paginación) |
-| 4. Eventos de `IncidentCard` | `incident-card.spec.ts` |
-| 5. Estado vacío | `empty-state.spec.ts`, `incident-list.spec.ts` |
-| 6. Validaciones del formulario | `incident-form.spec.ts`, `incident-validators.spec.ts` |
+| «añade la incidencia y completa lo que decide el dominio» | [`incident-store.spec.ts:88`](../src/app/core/state/incident-store.spec.ts) |
+| «la colección solo cambia cuando el servidor confirma» | `incident-store.spec.ts:99` |
+| «la incidencia persiste en el servidor» | `incident-store.spec.ts:110` |
+| «genera identificadores distintos en creaciones sucesivas» | `incident-store.spec.ts:121` |
+| «registra la incidencia con el usuario de la sesión» | [`incident-new.spec.ts:42`](../src/app/features/incidents/pages/incident-new/incident-new.spec.ts) |
+| «navega al detalle de la incidencia recién creada» | `incident-new.spec.ts:52` |
+
+### 2. Probar la eliminación
+
+| Prueba | Dónde |
+|---|---|
+| «elimina la incidencia» | [`incident-store.spec.ts:181`](../src/app/core/state/incident-store.spec.ts) |
+| «la eliminación persiste en el servidor» | `incident-store.spec.ts:189` |
+| «informa del error si la incidencia no existe» | `incident-store.spec.ts:199` |
+| «al eliminar la seleccionada, la selección se limpia» | `incident-store.spec.ts` (selección) |
+| «elimina la incidencia del contenedor cuando el hijo lo solicita» | [`incident-list.spec.ts:71`](../src/app/features/incidents/pages/incident-list/incident-list.spec.ts) |
+
+### 3. Probar un selector del store
+
+Hay selectores probados de los cuatro tipos que tiene el store:
+
+| Selector | Prueba | Dónde |
+|---|---|---|
+| Indicadores | «cuentan el total, las críticas y las abiertas» | `incident-store.spec.ts:212` |
+| Reactividad | «se recalculan solos al eliminar» | `incident-store.spec.ts:220` |
+| Selección | «selecciona por identificador» | `incident-store.spec.ts:291` |
+| Filtrado | «filtra la lista visible sin tocar la colección» | `incident-store.spec.ts:344` |
+| Paginación | «reparte los resultados en páginas del tamaño configurado» | `incident-store.spec.ts:455` |
+
+### 4. Probar la emisión de eventos de `IncidentCard`
+
+| Prueba | Dónde |
+|---|---|
+| «emite la incidencia recibida al seleccionar» | [`incident-card.spec.ts:38`](../src/app/features/incidents/components/incident-card/incident-card.spec.ts) |
+| «emite la incidencia recibida al pedir eliminarla, sin modificarla» | `incident-card.spec.ts:47` |
+
+La segunda comprueba además que el hijo **no modifica** la incidencia que
+recibe, que era el criterio del Día 5.
+
+### 5. Probar el estado vacío
+
+| Prueba | Dónde |
+|---|---|
+| «muestra el mensaje y la aclaración» | [`empty-state.spec.ts:30`](../src/app/shared/components/empty-state/empty-state.spec.ts) |
+| «proyecta la acción opcional» | `empty-state.spec.ts:39` |
+| «no deja rastro de lo que no se le pasa» | `empty-state.spec.ts:51` |
+| «muestra el estado vacío al eliminar todas y permite restaurar» | [`incident-list.spec.ts:107`](../src/app/features/incidents/pages/incident-list/incident-list.spec.ts) |
+| «un término sin coincidencias muestra el mensaje de filtros» | `incident-list.spec.ts` (búsqueda) |
+
+Los dos últimos cubren los **dos** estados vacíos, que dicen cosas
+distintas: «no hay incidencias» y «ninguna coincide con los filtros».
+
+### 6. Probar las validaciones del formulario
+
+**53 pruebas** en
+[`incident-form.spec.ts`](../src/app/features/incidents/components/incident-form/incident-form.spec.ts)
+y **24** en
+[`incident-validators.spec.ts`](../src/app/shared/validators/incident-validators.spec.ts).
+Las agrupaciones:
+
+| Bloque | Qué cubre |
+|---|---|
+| `describe('validación')` | obligatorios, longitud mínima y máxima, `aria-invalid` y su mensaje |
+| `describe('envío')` | que no emite si es inválido y que revela los cuatro errores |
+| `describe('validadores personalizados')` | solo espacios y palabras restringidas |
+| `describe('etiquetas dinámicas')` | vacías, duplicadas y tope de cinco |
+| `incident-validators.spec.ts` | los cuatro validadores por separado, sin `TestBed` |
+
+### 7. Configurar un reporte de cobertura
+
+Tres archivos:
+
+| Archivo | Qué aporta |
+|---|---|
+| [`karma.conf.js`](../karma.conf.js) | cuatro formatos de informe (`html`, `text-summary`, `json-summary`, `lcovonly`) y los umbrales de `check.global` |
+| [`angular.json`](../angular.json) | `"karmaConfig": "karma.conf.js"` en el objetivo `test` |
+| [`package.json`](../package.json) | los scripts `test`, `test:ci` y `test:coverage` |
+
+Los umbrales que rompen la build:
+
+```js
+check: { global: { statements: 90, branches: 80, functions: 90, lines: 90 } }
+```
 
 Eso deja el día para lo que sí faltaba: **medir**, y tapar los huecos que
 la medición revele.
