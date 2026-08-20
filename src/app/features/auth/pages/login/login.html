@@ -15,11 +15,11 @@
         type="email"
         autocomplete="username"
         formControlName="email"
-        [attr.aria-invalid]="showError('email')"
-        [attr.aria-describedby]="showError('email') ? 'email-error' : null"
+        [attr.aria-invalid]="!!visibleErrors().email"
+        [attr.aria-describedby]="visibleErrors().email ? 'email-error' : null"
       />
-      @if (showError('email')) {
-        <p class="login-error" id="email-error">{{ fieldError('email') }}</p>
+      @if (visibleErrors().email; as message) {
+        <p class="login-error" id="email-error">{{ message }}</p>
       }
     </div>
 
@@ -31,11 +31,11 @@
         type="password"
         autocomplete="current-password"
         formControlName="password"
-        [attr.aria-invalid]="showError('password')"
-        [attr.aria-describedby]="showError('password') ? 'password-error' : null"
+        [attr.aria-invalid]="!!visibleErrors().password"
+        [attr.aria-describedby]="visibleErrors().password ? 'password-error' : null"
       />
-      @if (showError('password')) {
-        <p class="login-error" id="password-error">{{ fieldError('password') }}</p>
+      @if (visibleErrors().password; as message) {
+        <p class="login-error" id="password-error">{{ message }}</p>
       }
     </div>
 

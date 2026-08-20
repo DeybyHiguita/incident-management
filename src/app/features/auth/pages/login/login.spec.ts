@@ -98,6 +98,40 @@ describe('Login', () => {
     }));
   });
 
+  describe('rendimiento (Día 26)', () => {
+    it('los errores son un valor derivado, no se recalculan sin cambios', () => {
+      const errors = component['visibleErrors'];
+
+      // Un `computed` devuelve la **misma referencia** mientras nada de lo
+      // que depende haya cambiado. Con los métodos anteriores, cada ciclo
+      // producía un objeto nuevo y volvía a evaluar el formulario.
+      const first = errors();
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      expect(errors()).toBe(first);
+    });
+
+    it('pero sí se recalculan cuando el formulario cambia', () => {
+      const errors = component['visibleErrors'];
+      const before = errors();
+
+      type_('#email', 'no-es-un-correo');
+      component['form'].controls.email.markAsTouched();
+
+      expect(errors()).not.toBe(before);
+      expect(errors().email).toContain('correo válido');
+    });
+
+    it('usa OnPush', () => {
+      // Si alguien lo quitara, la plantilla volvería a evaluarse en cada
+      // ciclo de toda la aplicación.
+      const definition = (Login as unknown as { ɵcmp: { onPush: boolean } }).ɵcmp;
+
+      expect(definition.onPush).toBe(true);
+    });
+  });
+
   function fillValid(): void {
     type_('#email', TEST_CREDENTIALS.email);
     type_('#password', TEST_CREDENTIALS.password);

@@ -179,7 +179,7 @@
              nada del enrutador ni de las direcciones de la aplicación. -->
         <app-incident-card
           [incident]="incident"
-          [detailLink]="['/incidents', incident.id]"
+          [detailLink]="'/incidents/' + incident.id"
           [selected]="incident.id === selectedId()"
           (incidentSelected)="onIncidentSelected($event)"
           (deleteRequested)="onDeleteRequested($event)"

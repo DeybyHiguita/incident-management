@@ -35,8 +35,13 @@ export class IncidentCard {
    * Ruta al detalle, ya construida por quien usa la tarjeta. Si no se pasa,
    * no se muestra el enlace. Así la tarjeta sigue sin conocer las
    * direcciones de la aplicación y se puede reutilizar en cualquier parte.
+   *
+   * Es una **cadena** y no un arreglo de segmentos a propósito: con
+   * `OnPush`, `['/incidents', id]` crea una referencia nueva en cada ciclo
+   * y el input se considera cambiado siempre. Dos cadenas iguales, en
+   * cambio, son `===`.
    */
-  readonly detailLink = input<readonly unknown[] | null>(null);
+  readonly detailLink = input<string | null>(null);
 
   /** El usuario seleccionó la incidencia. */
   readonly incidentSelected = output<Incident>();

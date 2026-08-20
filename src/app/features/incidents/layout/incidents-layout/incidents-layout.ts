@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 /**
@@ -13,5 +13,6 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   templateUrl: './incidents-layout.html',
   styleUrl: './incidents-layout.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IncidentsLayout {}

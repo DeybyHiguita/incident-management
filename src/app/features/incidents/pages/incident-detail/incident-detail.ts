@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { IncidentStore } from '../../../../core/state/incident-store';
@@ -20,6 +20,7 @@ import { IncidentHighlight } from '../../../../shared/directives/incident-highli
   ],
   templateUrl: './incident-detail.html',
   styleUrl: './incident-detail.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IncidentDetail {
   private readonly store = inject(IncidentStore);

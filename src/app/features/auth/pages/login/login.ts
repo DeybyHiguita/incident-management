@@ -1,5 +1,5 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth-service';
@@ -16,6 +16,7 @@ interface LoginFormControls {
   imports: [ReactiveFormsModule],
   templateUrl: './login.html',
   styleUrl: './login.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Login {
   private readonly formBuilder = inject(FormBuilder);
@@ -45,6 +46,41 @@ export class Login {
     }),
   });
 
+  /**
+   * Estado del formulario como señal.
+   *
+   * Un `FormGroup` no es reactivo para las señales: sus cambios de valor y
+   * de estado no despiertan a ningún `computed`. `form.events` sí es un
+   * flujo, así que convertirlo en señal permite derivar de él.
+   */
+  private readonly formState = toSignal(this.form.events, { initialValue: null });
+
+  /**
+   * Errores visibles por campo, calculados **una vez por cambio** en lugar
+   * de en cada ciclo de detección.
+   *
+   * Antes eran dos métodos llamados desde la plantilla: `showError()` se
+   * ejecutaba 12 veces por ciclo.
+   */
+  protected readonly visibleErrors = computed<Record<keyof LoginFormControls, string>>(() => {
+    // Dependencias: cualquier cambio del formulario o un intento de envío.
+    this.formState();
+    this.submitAttempted();
+
+    return {
+      email: this.errorFor('email'),
+      password: this.errorFor('password'),
+    };
+  });
+
+  /** Mensaje del campo si toca mostrarlo, o cadena vacía. */
+  private errorFor(field: keyof LoginFormControls): string {
+    const control = this.form.controls[field];
+    const visible = control.invalid && (control.touched || this.submitAttempted());
+
+    return visible ? this.messageFor(field) : '';
+  }
+
   protected onSubmit(): void {
     this.submitAttempted.set(true);
     this.error.set(null);
@@ -65,12 +101,7 @@ export class Login {
       });
   }
 
-  protected showError(field: keyof LoginFormControls): boolean {
-    const control = this.form.controls[field];
-    return control.invalid && (control.touched || this.submitAttempted());
-  }
-
-  protected fieldError(field: keyof LoginFormControls): string {
+  private messageFor(field: keyof LoginFormControls): string {
     const errors = this.form.controls[field].errors;
 
     if (!errors) {

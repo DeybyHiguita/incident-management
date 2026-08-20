@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 @Component({
@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
   imports: [RouterLink],
   templateUrl: './not-found.html',
   styleUrl: './not-found.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotFound {
   /** La URL que el usuario intentó abrir, para poder mostrársela. */

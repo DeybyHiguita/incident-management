@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { UpperCasePipe } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
@@ -50,6 +50,7 @@ const AUTO_REFRESH_MS = 30_000;
   ],
   templateUrl: './incident-list.html',
   styleUrl: './incident-list.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IncidentList {
   private readonly store = inject(IncidentStore);

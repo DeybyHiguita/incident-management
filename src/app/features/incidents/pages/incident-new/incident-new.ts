@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { IncidentStore } from '../../../../core/state/incident-store';
@@ -11,6 +11,7 @@ import { LoadingIndicator } from '../../../../shared/components/loading-indicato
   imports: [IncidentForm, RouterLink, LoadingIndicator],
   templateUrl: './incident-new.html',
   styleUrl: './incident-new.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IncidentNew {
   private readonly store = inject(IncidentStore);

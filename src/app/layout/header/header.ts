@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth-service';
 import { FocusWithin } from '../../shared/directives/focus-within';
@@ -8,6 +8,7 @@ import { FocusWithin } from '../../shared/directives/focus-within';
   imports: [RouterLink, RouterLinkActive, FocusWithin],
   templateUrl: './header.html',
   styleUrl: './header.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Header {
   private readonly authService = inject(AuthService);
