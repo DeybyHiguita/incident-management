@@ -1,20 +1,26 @@
 <section class="dashboard" aria-labelledby="dashboard-title">
   <h2 id="dashboard-title">Panel de control</h2>
 
-  <ul class="stats" aria-label="Resumen de incidencias">
-    <li class="stats-item">
-      <span class="stats-value">{{ totalCount() }}</span>
-      <span class="stats-label">Totales</span>
-    </li>
-    <li class="stats-item stats-item--critical">
-      <span class="stats-value">{{ criticalCount() }}</span>
-      <span class="stats-label">Críticas</span>
-    </li>
-    <li class="stats-item stats-item--open">
-      <span class="stats-value">{{ openCount() }}</span>
-      <span class="stats-label">Abiertas</span>
-    </li>
-  </ul>
+  <!-- Los indicadores se difieren: son lo más pesado de la pantalla y no
+       lo primero que hace falta ver. `on idle` espera a que el navegador
+       esté ocioso, así no compiten con el primer pintado. -->
+  @defer (on idle) {
+    <app-dashboard-stats />
+  } @placeholder (minimum 300ms) {
+    <!-- Esqueleto del mismo tamaño: reserva el hueco para que el contenido
+         de debajo no dé un salto al llegar los indicadores. -->
+    <ul class="stats" aria-hidden="true">
+      <li class="stats-item stats-item--skeleton"></li>
+      <li class="stats-item stats-item--skeleton"></li>
+      <li class="stats-item stats-item--skeleton"></li>
+    </ul>
+  } @loading (minimum 200ms) {
+    <app-loading-indicator message="Cargando indicadores…" />
+  } @error {
+    <p class="error-banner" role="alert">
+      No se pudieron cargar los indicadores. Recarga la página para reintentarlo.
+    </p>
+  }
 
   <div class="dashboard-actions">
     <a class="btn btn--primary" routerLink="/incidents/new">Registrar incidencia</a>

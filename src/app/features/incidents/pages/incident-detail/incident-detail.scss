@@ -61,6 +61,15 @@
     color: var(--color-text-muted);
   }
 
+  /* Reserva el hueco de la actividad para que las acciones no salten. */
+  &-activity-placeholder {
+    margin: 0;
+    padding-top: var(--space-4);
+    border-top: var(--border-width) solid var(--color-border-subtle);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-subtle);
+  }
+
   &-actions {
     display: flex;
     flex-wrap: wrap;

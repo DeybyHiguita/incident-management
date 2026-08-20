@@ -1,0 +1,35 @@
+<div class="dashboard-stats">
+  <ul class="stats" aria-label="Resumen de incidencias">
+    <li class="stats-item">
+      <span class="stats-value">{{ totalCount() }}</span>
+      <span class="stats-label">Totales</span>
+    </li>
+    <li class="stats-item stats-item--critical">
+      <span class="stats-value">{{ criticalCount() }}</span>
+      <span class="stats-label">Críticas</span>
+    </li>
+    <li class="stats-item stats-item--open">
+      <span class="stats-value">{{ openCount() }}</span>
+      <span class="stats-label">Abiertas</span>
+    </li>
+  </ul>
+
+  <h3 class="dashboard-stats-title">Distribución por estado</h3>
+
+  <!-- Barras con `<meter>`: el navegador ya aporta el rol y el valor a las
+       tecnologías de asistencia, así que no hace falta ARIA a mano. -->
+  <ul class="dashboard-stats-breakdown">
+    @for (row of breakdown(); track row.status) {
+      <li class="dashboard-stats-row">
+        <span class="dashboard-stats-row-label">{{ row.label }}</span>
+        <meter
+          class="dashboard-stats-row-meter"
+          [value]="row.count"
+          [max]="totalCount() || 1"
+          [attr.aria-label]="row.label + ': ' + row.count + ' de ' + totalCount()"
+        ></meter>
+        <span class="dashboard-stats-row-count">{{ row.count }} ({{ row.percent }}%)</span>
+      </li>
+    }
+  </ul>
+</div>

@@ -1,0 +1,15 @@
+<section class="activity" aria-labelledby="activity-title">
+  <h3 class="activity-title" id="activity-title">Actividad</h3>
+
+  <ol class="activity-list">
+    @for (entry of entries(); track entry.label) {
+      <li class="activity-entry">
+        <span class="activity-entry-label">{{ entry.label }}</span>
+        <time class="activity-entry-time" [attr.datetime]="entry.at" [title]="entry.at | date: 'full'">
+          {{ entry.at | relativeTime }}
+        </time>
+        <span class="activity-entry-by">por {{ entry.by }}</span>
+      </li>
+    }
+  </ol>
+</section>

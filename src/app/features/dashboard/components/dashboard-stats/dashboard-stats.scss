@@ -1,0 +1,44 @@
+.dashboard-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  &-title {
+    margin: 0;
+    font-size: var(--font-size-base);
+  }
+
+  &-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &-row {
+    display: grid;
+    /* Etiqueta, barra y cifra: la barra se lleva el espacio sobrante. */
+    grid-template-columns: minmax(6rem, auto) 1fr minmax(5rem, auto);
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+
+    &-label {
+      color: var(--color-text-muted);
+    }
+
+    &-meter {
+      width: 100%;
+      min-width: 0;
+      height: 0.6rem;
+    }
+
+    &-count {
+      font-variant-numeric: tabular-nums;
+      text-align: end;
+      color: var(--color-text-muted);
+    }
+  }
+}

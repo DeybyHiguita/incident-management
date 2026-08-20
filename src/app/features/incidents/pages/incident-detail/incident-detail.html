@@ -42,6 +42,18 @@
       </ul>
     }
 
+    <!-- La actividad es información secundaria: quien abre el detalle
+         quiere leer el problema. Se difiere hasta que entra en pantalla. -->
+    @defer (on viewport) {
+      <app-incident-activity [incident]="incident" />
+    } @placeholder {
+      <p class="detail-activity-placeholder">Actividad de la incidencia</p>
+    } @loading (minimum 200ms) {
+      <app-loading-indicator message="Cargando actividad…" />
+    } @error {
+      <p class="error-banner" role="alert">No se pudo cargar la actividad.</p>
+    }
+
     <div class="detail-actions">
       @if (canManageIncidents()) {
         <a class="btn btn--primary" [routerLink]="['/incidents', incident.id, 'edit']">

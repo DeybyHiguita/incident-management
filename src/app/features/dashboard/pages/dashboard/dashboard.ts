@@ -2,12 +2,21 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { IncidentStore } from '../../../../core/state/incident-store';
 import { EmptyState } from '../../../../shared/components/empty-state/empty-state';
+import { LoadingIndicator } from '../../../../shared/components/loading-indicator/loading-indicator';
+import { DashboardStats } from '../../components/dashboard-stats/dashboard-stats';
 import { IncidentPriorityPipe } from '../../../../shared/pipes/incident-priority-pipe';
 import { IncidentHighlight } from '../../../../shared/directives/incident-highlight';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, EmptyState, IncidentPriorityPipe, IncidentHighlight],
+  imports: [
+    RouterLink,
+    EmptyState,
+    LoadingIndicator,
+    DashboardStats,
+    IncidentPriorityPipe,
+    IncidentHighlight,
+  ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
