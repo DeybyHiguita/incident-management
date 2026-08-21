@@ -1,6 +1,5 @@
 import {
   ComponentFixture,
-  DeferBlockBehavior,
   DeferBlockState,
   TestBed,
   fakeAsync,

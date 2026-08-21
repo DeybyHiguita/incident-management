@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync } from '@angular/core/testing';
-import { Router, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
+import { RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { authGuard } from './auth-guard';

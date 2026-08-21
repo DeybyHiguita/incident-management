@@ -7,6 +7,7 @@ import {
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import { fakeBackendInterceptor } from './core/api/fake-backend.interceptor';
+import { environment } from '../environments/environment';
 import { authTokenInterceptor } from './core/http/auth-token.interceptor';
 import { correlationIdInterceptor } from './core/http/correlation-id.interceptor';
 import { errorHandlingInterceptor } from './core/http/error-handling.interceptor';
@@ -44,7 +45,10 @@ export const appConfig: ApplicationConfig = {
         authTokenInterceptor,
         loadingInterceptor,
         errorHandlingInterceptor,
-        fakeBackendInterceptor,
+        // El backend simulado solo entra si el entorno lo pide: en
+        // producción `useFakeBackend` es `false` y la cadena termina en la
+        // red de verdad.
+        ...(environment.useFakeBackend ? [fakeBackendInterceptor] : []),
       ]),
     ),
     { provide: LOCALE_ID, useValue: 'es' },

@@ -1,3 +1,10 @@
+<!-- eslint-disable @angular-eslint/template/click-events-have-key-events,
+     @angular-eslint/template/interactive-supports-focus --
+     El (click) del <dialog> solo sirve para cerrar al pulsar en el fondo.
+     La regla exige un equivalente de teclado, y aquí ya lo hay: el propio
+     <dialog> se cierra con Escape de forma nativa. Añadir un `tabindex` o
+     un `keydown` metería en el orden de tabulación un elemento que no es
+     un control, que es peor para quien navega con teclado. -->
 <dialog #dialog class="modal" (close)="onDialogClose()" (click)="onDialogClick($event)">
   <div class="modal-panel">
     <header class="modal-header">

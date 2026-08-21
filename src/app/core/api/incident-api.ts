@@ -2,9 +2,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Incident } from '../models/incident.model';
+import { environment } from '../../../environments/environment';
 
-/** Ruta base de la API de incidencias. */
-const BASE_URL = '/api/incidents';
+/** Ruta base de la API de incidencias, derivada del entorno. */
+const BASE_URL = `${environment.apiBaseUrl}/incidents`;
 
 /**
  * Capa de acceso HTTP.

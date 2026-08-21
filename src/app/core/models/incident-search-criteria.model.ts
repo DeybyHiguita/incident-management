@@ -2,7 +2,7 @@ import { Incident, IncidentPriority, IncidentStatus } from './incident.model';
 
 export class IncidentSearchCriteria {
   constructor(
-    public readonly searchTerm: string = '',
+    public readonly searchTerm = '',
     public readonly status?: IncidentStatus,
     public readonly priority?: IncidentPriority,
     public readonly category?: string,

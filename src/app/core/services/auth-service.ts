@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { AuthResponse, Credentials, Session } from '../models/auth.model';
 import { User, UserRole } from '../models/user.model';
+import { environment } from '../../../environments/environment';
 
 /** Clave de la sesión en el almacenamiento del navegador. */
 const STORAGE_KEY = 'incident-management.session';
@@ -64,7 +65,7 @@ export class AuthService {
    */
   login(credentials: Credentials): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>('/api/auth/login', credentials)
+      .post<AuthResponse>(`${environment.apiBaseUrl}/auth/login`, credentials)
       .pipe(tap((response) => this.startSession(response)));
   }
 
