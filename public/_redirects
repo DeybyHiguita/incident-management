@@ -1,0 +1,11 @@
+# Rutas de la SPA (Netlify y compatibles).
+#
+# El enrutador de Angular vive en el navegador: el servidor no conoce
+# /incidents/inc-003. Sin esta regla, recargar esa dirección devolvería un
+# 404 del servidor, aunque dentro de la aplicación sea una ruta válida.
+#
+# Todo lo que no sea un archivo real se responde con index.html, y Angular
+# resuelve la ruta al arrancar. El 200 (y no 301) es importante: es una
+# reescritura, no una redirección, así que la barra de direcciones conserva
+# la ruta original.
+/*    /index.html   200
