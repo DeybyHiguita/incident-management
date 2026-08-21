@@ -4,6 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { Login } from './login';
 import { AuthService } from '../../../../core/services/auth-service';
 import { prepareApi, provideTestApi, TEST_CREDENTIALS } from '../../../../testing/api-testing';
+import { measureChangeDetection } from '../../../../testing/perf-testing';
 
 describe('Login', () => {
   let component: Login;
@@ -129,6 +130,22 @@ describe('Login', () => {
       const definition = (Login as unknown as { ɵcmp: { onPush: boolean } }).ɵcmp;
 
       expect(definition.onPush).toBe(true);
+    });
+
+    it('no reevalúa la plantilla en 10 ciclos sin cambios', () => {
+      // La medición del Día 26, convertida en prueba: ya no depende de que
+      // alguien se acuerde de repetirla a mano. La cifra la da el propio
+      // profiler de Angular, no una aproximación nuestra.
+      //
+      // Cómo interpretarla, en docs/medir-rendimiento.md.
+      const conteo = measureChangeDetection(() => {
+        for (let i = 0; i < 10; i++) fixture.detectChanges();
+      });
+
+      // Los ciclos se ejecutaron de verdad: sin esto, un 0 en la línea
+      // siguiente podría significar simplemente que no se midió nada.
+      expect(conteo.changeDetections).toBe(10);
+      expect(conteo.templateUpdates).toBe(0);
     });
   });
 

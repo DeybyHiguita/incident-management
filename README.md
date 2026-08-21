@@ -53,7 +53,7 @@ CLI viene en las dependencias del proyecto: no hace falta instalarlo aparte.
 | `npm start` | servidor de desarrollo con recarga automática, en el puerto 4300 |
 | `npm run build` | compila para producción en `dist/incident-management/browser/` |
 | `npm test` | pruebas en modo vigilancia, con navegador abierto |
-| `npm run test:ci` | pruebas una vez, sin ventana — **454 pruebas** |
+| `npm run test:ci` | pruebas una vez, sin ventana — **455 pruebas** |
 | `npm run test:coverage` | pruebas con informe de cobertura en `coverage/` |
 | `npm run lint` | análisis estático con `angular-eslint` |
 
@@ -110,7 +110,7 @@ archivos de pruebas.
 ## Pruebas
 
 ```bash
-npm run test:ci        # 454 pruebas
+npm run test:ci        # 455 pruebas
 npm run test:coverage  # informe en coverage/
 ```
 
@@ -194,6 +194,7 @@ emite el servidor, no la aplicación**. Es lo que cierra el riesgo R-05.
 | [Decisiones técnicas](docs/decisiones-tecnicas.md) | 10 decisiones con su alternativa descartada, y 7 limitaciones |
 | [Riesgos conocidos](docs/riesgos-conocidos.md) | 9 riesgos de seguridad con su plan de cierre |
 | [Guía de pruebas](docs/guia-de-pruebas.md) | cómo se prueba cada tipo de pieza |
+| [Medir rendimiento](docs/medir-rendimiento.md) | cómo se obtienen las cifras de detección de cambios, y qué herramientas no sirven |
 | [Conceptos por día](docs/) | `dia-NN-conceptos-y-pasos.md`, uno por jornada del reto |
 
 El plan completo del reto está en [`../PLAN.md`](../PLAN.md).
@@ -205,7 +206,7 @@ El plan completo del reto está en [`../PLAN.md`](../PLAN.md).
 | | |
 |---|---|
 | Angular | 20.3.29 |
-| Pruebas | 454, todas en verde |
+| Pruebas | 455, todas en verde |
 | Vulnerabilidades | 0 |
 | Errores de lint | 0 |
 | Advertencias de compilación | 0 |

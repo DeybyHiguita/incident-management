@@ -21,6 +21,11 @@ el Día 4, y se eligió `incident.id` por ser estable. El Día 12 se cambió un
 
 ## 2. La medición (actividad 6)
 
+> **De dónde salen estos números y cómo repetirlos**:
+> [`medir-rendimiento.md`](medir-rendimiento.md). Incluye la utilidad
+> `measureChangeDetection()`, que usa el profiler del propio Angular, y por
+> qué `ng.profiler` no existe en Angular 20.
+
 Optimizar sin medir es adivinar. La medición se hizo instrumentando los
 métodos de plantilla y contando cuántas veces se ejecutan en **10 ciclos de
 detección** sin que cambie nada.
